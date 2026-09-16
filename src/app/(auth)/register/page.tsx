@@ -26,7 +26,14 @@ export default function RegisterPage() {
 
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "", apartment: "", phone: "" },
+    defaultValues: {
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      apartment: "",
+      phone: "",
+    },
   });
 
   async function onSubmit(data: SignUpInput) {
@@ -73,7 +80,9 @@ export default function RegisterPage() {
               }`}
             >
               <span className="flex-shrink-0">
-                <Sparkles className={`h-5 w-5 ${message.type === "success" ? "text-green-600" : "text-red-600"}`} />
+                <Sparkles
+                  className={`h-5 w-5 ${message.type === "success" ? "text-green-600" : "text-red-600"}`}
+                />
               </span>
               <span className="font-medium">{message.text}</span>
             </div>
@@ -153,7 +162,9 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormItem>
-                <FormLabel>Apartamento <span className="text-muted-foreground font-normal">(opcional)</span></FormLabel>
+                <FormLabel>
+                  Apartamento <span className="text-muted-foreground font-normal">(opcional)</span>
+                </FormLabel>
                 <FormControl>
                   <Controller
                     name="apartment"
@@ -170,7 +181,9 @@ export default function RegisterPage() {
               </FormItem>
 
               <FormItem>
-                <FormLabel>Teléfono <span className="text-muted-foreground font-normal">(opcional)</span></FormLabel>
+                <FormLabel>
+                  Teléfono <span className="text-muted-foreground font-normal">(opcional)</span>
+                </FormLabel>
                 <FormControl>
                   <Controller
                     name="phone"
@@ -178,7 +191,12 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type="tel" placeholder="+57 300 123 4567" className="pl-10" {...field} />
+                        <Input
+                          type="tel"
+                          placeholder="+57 300 123 4567"
+                          className="pl-10"
+                          {...field}
+                        />
                       </div>
                     )}
                   />
@@ -187,10 +205,29 @@ export default function RegisterPage() {
               </FormItem>
             </div>
 
-            <Button type="submit" className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
                   Registrando...
                 </span>
               ) : (

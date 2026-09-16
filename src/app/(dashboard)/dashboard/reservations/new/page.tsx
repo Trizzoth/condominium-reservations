@@ -37,7 +37,9 @@ export default function NewReservationPage() {
   const [selectedStartTime, setSelectedStartTime] = useState<string>("");
   const [selectedEndTime, setSelectedEndTime] = useState<string>("");
   const [areas, setAreas] = useState<Area[]>([]);
-  const [schedules, setSchedules] = useState<Record<number, { open: string; close: string; maxDuration: number }>>({});
+  const [schedules, setSchedules] = useState<
+    Record<number, { open: string; close: string; maxDuration: number }>
+  >({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,9 +50,9 @@ export default function NewReservationPage() {
     () =>
       createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       ),
-    []
+    [],
   );
 
   // Fetch areas and schedules on mount
@@ -70,7 +72,10 @@ export default function NewReservationPage() {
             .select("*")
             .eq("common_area_id", area.id);
           if (schedData) {
-            const scheduleMap: Record<number, { open: string; close: string; maxDuration: number }> = {};
+            const scheduleMap: Record<
+              number,
+              { open: string; close: string; maxDuration: number }
+            > = {};
             schedData.forEach((s) => {
               scheduleMap[s.day_of_week] = {
                 open: s.open_time,
@@ -114,7 +119,11 @@ export default function NewReservationPage() {
   };
 
   // Check real-time availability
-  const checkAvailability = async (date: Date, startTime: string, endTime: string): Promise<boolean> => {
+  const checkAvailability = async (
+    date: Date,
+    startTime: string,
+    endTime: string,
+  ): Promise<boolean> => {
     if (!selectedArea) return false;
     setCheckingAvailability(true);
 
@@ -227,210 +236,228 @@ export default function NewReservationPage() {
   };
 
   return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarDays className="h-6 w-6" />
-            Nueva reserva
-          </h1>
-          <p className="text-muted-foreground mt-1">Selecciona área, fecha y hora</p>
-        </div>
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+          <CalendarDays className="h-6 w-6" />
+          Nueva reserva
+        </h1>
+        <p className="text-muted-foreground mt-1">Selecciona área, fecha y hora</p>
+      </div>
 
-        {loading ? (
+      {loading ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-4 text-muted-foreground">Cargando áreas...</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" /> {error}
+            </div>
+          )}
+          {success && (
+            <div className="p-3 rounded-md bg-green-100 text-green-800 text-sm flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" /> {success}
+            </div>
+          )}
+
+          {/* Step 1: Select Area */}
           <Card>
-            <CardContent className="py-12 text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <p className="mt-4 text-muted-foreground">Cargando áreas...</p>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5" />
+                1. Elige el área común
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedArea} onValueChange={setSelectedArea}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona un área" />
+                </SelectTrigger>
+                <SelectContent>
+                  {areas.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      <div>
+                        <p className="font-medium">{area.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Capacidad: {area.capacity} personas
+                        </p>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedArea && areas.find((a) => a.id === selectedArea) && (
+                <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
+                  <p className="font-medium">Reglas:</p>
+                  <p className="text-muted-foreground mt-1">
+                    {areas.find((a) => a.id === selectedArea)?.rules || "Sin reglas específicas"}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" /> {error}
-              </div>
-            )}
-            {success && (
-              <div className="p-3 rounded-md bg-green-100 text-green-800 text-sm flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" /> {success}
-              </div>
-            )}
 
-            {/* Step 1: Select Area */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5" />
-                  1. Elige el área común
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Select value={selectedArea} onValueChange={setSelectedArea}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona un área" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {areas.map((area) => (
-                      <SelectItem key={area.id} value={area.id}>
-                        <div>
-                          <p className="font-medium">{area.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Capacidad: {area.capacity} personas
-                          </p>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedArea && areas.find(a => a.id === selectedArea) && (
-                  <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                    <p className="font-medium">Reglas:</p>
-                    <p className="text-muted-foreground mt-1">
-                      {areas.find(a => a.id === selectedArea)?.rules || "Sin reglas específicas"}
+          {/* Step 2: Select Date with Calendar */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                2. Elige la fecha
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!selectedArea ? (
+                <div className="text-center py-8">
+                  <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">
+                    Primero selecciona un área para ver disponibilidad
+                  </p>
+                </div>
+              ) : loading ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                  <p className="mt-3 text-muted-foreground">Cargando horarios...</p>
+                </div>
+              ) : Object.keys(schedules).length === 0 ? (
+                <div className="text-center py-8">
+                  <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <p className="text-muted-foreground">
+                    No hay horarios configurados para esta área
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">Contacta al administrador</p>
+                </div>
+              ) : (
+                <>
+                  <CalendarComponent
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    disabledDays={getDisabledDates()}
+                    unavailableDays={getUnavailableDates()}
+                    disableUnavailable={true}
+                  />
+                  {selectedDate && (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      Seleccionado: {format(selectedDate, "EEEE d 'de' MMMM yyyy", { locale: es })}
                     </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                  <p className="mt-2 text-xs text-muted-foreground flex items-center justify-center gap-1">
+                    <span className="w-3 h-3 rounded-full bg-destructive/10 border border-destructive/20" />
+                    <span>Sin horario</span>
+                    <span className="w-3 h-3 rounded-full text-muted-foreground/30" />
+                    <span>Pasado</span>
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-            {/* Step 2: Select Date with Calendar */}
+          {/* Step 3: Select Time */}
+          {selectedArea && selectedDate && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  2. Elige la fecha
+                  <Clock className="h-5 w-5" />
+                  3. Elige la hora
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {!selectedArea ? (
-                  <div className="text-center py-8">
-                    <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                    <p className="text-muted-foreground">Primero selecciona un área para ver disponibilidad</p>
+                {!schedules[selectedDate.getDay()] ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Este día no tiene horario configurado</p>
+                    <p className="text-sm mt-1">Selecciona otro día</p>
                   </div>
-                ) : loading ? (
-                  <div className="text-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-                    <p className="mt-3 text-muted-foreground">Cargando horarios...</p>
-                  </div>
-                ) : Object.keys(schedules).length === 0 ? (
-                  <div className="text-center py-8">
-                    <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                    <p className="text-muted-foreground">No hay horarios configurados para esta área</p>
-                    <p className="text-xs text-muted-foreground mt-1">Contacta al administrador</p>
+                ) : timeSlots.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No hay horarios disponibles para este día</p>
                   </div>
                 ) : (
                   <>
-                    <CalendarComponent
-                      selected={selectedDate}
-                      onSelect={handleDateSelect}
-                      disabledDays={getDisabledDates()}
-                      unavailableDays={getUnavailableDates()}
-                      disableUnavailable={true}
-                    />
-                    {selectedDate && (
-                      <p className="mt-3 text-sm text-muted-foreground">
-                        Seleccionado: {format(selectedDate, "EEEE d 'de' MMMM yyyy", { locale: es })}
-                      </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Hora inicio</Label>
+                        <Select value={selectedStartTime} onValueChange={setSelectedStartTime}>
+                          <SelectTrigger className="w-full mt-1">
+                            <SelectValue placeholder="Hora inicio" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeSlots.map((slot) => (
+                              <SelectItem
+                                key={slot.time}
+                                value={slot.time}
+                                disabled={!slot.available}
+                              >
+                                {slot.time}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Hora fin</Label>
+                        <Select value={selectedEndTime} onValueChange={setSelectedEndTime}>
+                          <SelectTrigger className="w-full mt-1">
+                            <SelectValue placeholder="Hora fin" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeSlots
+                              .filter((slot) => slot.time > selectedStartTime)
+                              .map((slot) => (
+                                <SelectItem
+                                  key={slot.time}
+                                  value={slot.time}
+                                  disabled={!slot.available}
+                                >
+                                  {slot.time}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {selectedStartTime && selectedEndTime && (
+                      <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
+                        <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
+                        <p className="text-muted-foreground">
+                          Máx. {schedules[selectedDate.getDay()]?.maxDuration || 4} horas
+                        </p>
+                        {checkingAvailability && (
+                          <p className="text-primary mt-1 flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Verificando disponibilidad...
+                          </p>
+                        )}
+                      </div>
                     )}
-                    <p className="mt-2 text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <span className="w-3 h-3 rounded-full bg-destructive/10 border border-destructive/20" />
-                      <span>Sin horario</span>
-                      <span className="w-3 h-3 rounded-full text-muted-foreground/30" />
-                      <span>Pasado</span>
-                    </p>
                   </>
                 )}
               </CardContent>
             </Card>
+          )}
 
-            {/* Step 3: Select Time */}
-            {selectedArea && selectedDate && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    3. Elige la hora
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!schedules[selectedDate.getDay()] ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>Este día no tiene horario configurado</p>
-                      <p className="text-sm mt-1">Selecciona otro día</p>
-                    </div>
-                  ) : timeSlots.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>No hay horarios disponibles para este día</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Hora inicio</Label>
-                          <Select value={selectedStartTime} onValueChange={setSelectedStartTime}>
-                            <SelectTrigger className="w-full mt-1">
-                              <SelectValue placeholder="Hora inicio" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {timeSlots.map((slot) => (
-                                <SelectItem key={slot.time} value={slot.time} disabled={!slot.available}>
-                                  {slot.time}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Hora fin</Label>
-                          <Select value={selectedEndTime} onValueChange={setSelectedEndTime}>
-                            <SelectTrigger className="w-full mt-1">
-                              <SelectValue placeholder="Hora fin" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {timeSlots
-                                .filter((slot) => slot.time > selectedStartTime)
-                                .map((slot) => (
-                                  <SelectItem key={slot.time} value={slot.time} disabled={!slot.available}>
-                                    {slot.time}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+          {/* Submit */}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={
+              submitting || !selectedArea || !selectedDate || !selectedStartTime || !selectedEndTime
+            }
+          >
+            {submitting ? "Enviando..." : "Enviar solicitud de reserva"}
+          </Button>
 
-                      {selectedStartTime && selectedEndTime && (
-                        <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                          <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
-                          <p className="text-muted-foreground">
-                            Máx. {schedules[selectedDate.getDay()]?.maxDuration || 4} horas
-                          </p>
-                          {checkingAvailability && (
-                            <p className="text-primary mt-1 flex items-center gap-1">
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                              Verificando disponibilidad...
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Submit */}
-            <Button type="submit" className="w-full" disabled={submitting || !selectedArea || !selectedDate || !selectedStartTime || !selectedEndTime}>
-              {submitting ? "Enviando..." : "Enviar solicitud de reserva"}
-            </Button>
-
-            <p className="text-center text-sm text-muted-foreground">
-              Las reservas requieren aprobación del administrador.
-            </p>
-          </form>
-        )}
-      </div>
+          <p className="text-center text-sm text-muted-foreground">
+            Las reservas requieren aprobación del administrador.
+          </p>
+        </form>
+      )}
+    </div>
   );
 }

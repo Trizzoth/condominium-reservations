@@ -10,13 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, SignInInput } from "@/lib/validations/auth";
-import {
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/forms/form";
+import { Form, FormItem, FormLabel, FormControl, FormMessage } from "@/components/forms/form";
 import { Building2, Mail, Lock, Sparkles } from "lucide-react";
 
 function LoginForm() {
@@ -113,12 +107,7 @@ function LoginForm() {
                   render={({ field }) => (
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="tu@email.com"
-                        className="pl-10"
-                        {...field}
-                      />
+                      <Input type="email" placeholder="tu@email.com" className="pl-10" {...field} />
                     </div>
                   )}
                 />
@@ -151,10 +140,29 @@ function LoginForm() {
               <FormMessage />
             </FormItem>
 
-            <Button type="submit" className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
                   Entrando...
                 </span>
               ) : (
@@ -189,7 +197,12 @@ function LoginForm() {
               </FormControl>
               <FormMessage />
             </FormItem>
-            <Button type="submit" variant="outline" className="w-full py-3 text-base font-semibold rounded-xl hover:bg-accent/50 transition-colors" disabled={isLoading}>
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full py-3 text-base font-semibold rounded-xl hover:bg-accent/50 transition-colors"
+              disabled={isLoading}
+            >
               <Mail className="mr-2 h-4 w-4" />
               {isLoading ? "Enviando..." : "Enviar enlace mágico"}
             </Button>
@@ -216,7 +229,16 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="relative w-12 h-12"><div className="absolute inset-0 border-4 border-primary/20 rounded-full" /><div className="absolute inset-0 border-4 border-primary rounded-full animate-spin border-t-transparent" /></div></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 border-4 border-primary/20 rounded-full" />
+            <div className="absolute inset-0 border-4 border-primary rounded-full animate-spin border-t-transparent" />
+          </div>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

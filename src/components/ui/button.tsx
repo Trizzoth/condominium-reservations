@@ -3,8 +3,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    React.RefAttributes<HTMLButtonElement> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, React.RefAttributes<HTMLButtonElement> {
   asChild?: boolean;
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
@@ -26,21 +25,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               variant === "outline",
             "bg-secondary text-secondary-foreground hover:bg-secondary/80 h-10 px-4 py-2":
               variant === "secondary",
-            "hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2":
-              variant === "ghost",
-            "text-primary underline-offset-4 hover:underline h-10 px-4 py-2":
-              variant === "link",
+            "hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2": variant === "ghost",
+            "text-primary underline-offset-4 hover:underline h-10 px-4 py-2": variant === "link",
             "h-10 px-3 text-xs": size === "sm",
             "h-11 rounded-md px-8": size === "lg",
             "h-10 w-10": size === "icon",
           },
-          className
+          className,
         )}
         ref={ref}
         {...props}
       />
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

@@ -49,15 +49,17 @@ export async function GET(request: Request) {
   let failed = 0;
 
   if (reservations && reservations.length > 0) {
-    const emailsByUserId = await getUserEmailsByIds(
-      reservations.map((r) => r.user_id as string)
-    );
+    const emailsByUserId = await getUserEmailsByIds(reservations.map((r) => r.user_id as string));
 
     for (const reservation of reservations) {
       const recipientEmail = emailsByUserId.get(reservation.user_id as string);
       if (!recipientEmail) continue;
 
-      const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
+      const startFormatted = format(
+        parseISO(reservation.start_time),
+        "d 'de' MMMM yyyy 'a las' HH:mm",
+        { locale: es },
+      );
       const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
 
       const result = await sendEmail({

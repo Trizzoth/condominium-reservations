@@ -36,7 +36,10 @@ export function InviteUserForm() {
     setSending(false);
     if ("error" in result && result.error) {
       const err = result.error as { form?: string[] } | string;
-      setMessage({ type: "error", text: typeof err === "string" ? err : err.form?.[0] || "Error al invitar" });
+      setMessage({
+        type: "error",
+        text: typeof err === "string" ? err : err.form?.[0] || "Error al invitar",
+      });
     } else if ("success" in result && result.success) {
       setMessage({ type: "success", text: result.success });
       formEl.reset();
@@ -53,7 +56,10 @@ export function InviteUserForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-end">
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-end"
+    >
       <div className="space-y-1">
         <Label htmlFor="invite-email">Email *</Label>
         <Input id="invite-email" name="email" type="email" required placeholder="nuevo@email.com" />
@@ -70,14 +76,25 @@ export function InviteUserForm() {
           </SelectTrigger>
           <SelectContent>
             {ROLES.map((r) => (
-              <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+              <SelectItem key={r.value} value={r.value}>
+                {r.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="flex gap-2">
-        <Button type="submit" disabled={sending}>{sending ? "Invitando..." : "Invitar"}</Button>
-        <Button type="button" variant="outline" onClick={() => { setOpen(false); setMessage(null); }}>
+        <Button type="submit" disabled={sending}>
+          {sending ? "Invitando..." : "Invitar"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setOpen(false);
+            setMessage(null);
+          }}
+        >
           Cerrar
         </Button>
       </div>
@@ -90,7 +107,15 @@ export function InviteUserForm() {
   );
 }
 
-export function RoleSelect({ userId, currentRole, disabled }: { userId: string; currentRole: string; disabled?: boolean }) {
+export function RoleSelect({
+  userId,
+  currentRole,
+  disabled,
+}: {
+  userId: string;
+  currentRole: string;
+  disabled?: boolean;
+}) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +141,9 @@ export function RoleSelect({ userId, currentRole, disabled }: { userId: string; 
         </SelectTrigger>
         <SelectContent>
           {ROLES.map((r) => (
-            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+            <SelectItem key={r.value} value={r.value}>
+              {r.label}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -145,7 +172,15 @@ export function DeleteUserButton({ userId, disabled }: { userId: string; disable
 
   return (
     <div className="flex flex-col gap-1">
-      <Button variant="ghost" size="icon" className="text-red-600" title="Eliminar" aria-label="Eliminar usuario" onClick={onClick} disabled={disabled || deleting}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-red-600"
+        title="Eliminar"
+        aria-label="Eliminar usuario"
+        onClick={onClick}
+        disabled={disabled || deleting}
+      >
         <Trash2 className="h-4 w-4" />
       </Button>
       {error && <span className="text-xs text-red-600">{error}</span>}

@@ -58,6 +58,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # Solo server
 ## Base de datos (Supabase SQL Editor)
 
 Ejecutar el schema en `MEMORY.md` (líneas 23-70). Incluye:
+
 - `profiles` - Extiende `auth.users`
 - `common_areas` - Áreas reservables
 - `reservations` - Reservas con constraint anti-solapamiento

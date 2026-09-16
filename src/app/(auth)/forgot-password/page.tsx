@@ -8,13 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, ForgotPasswordInput } from "@/lib/validations/auth";
-import {
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/forms/form";
+import { Form, FormItem, FormLabel, FormControl, FormMessage } from "@/components/forms/form";
 import { Building2, Mail, Sparkles, ArrowLeft } from "lucide-react";
 
 export default function ForgotPasswordPage() {
@@ -76,12 +70,7 @@ export default function ForgotPasswordPage() {
                   render={({ field }) => (
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        type="email"
-                        placeholder="tu@email.com"
-                        className="pl-10"
-                        {...field}
-                      />
+                      <Input type="email" placeholder="tu@email.com" className="pl-10" {...field} />
                     </div>
                   )}
                 />
@@ -89,12 +78,19 @@ export default function ForgotPasswordPage() {
               <FormMessage />
             </FormItem>
 
-            <Button type="submit" className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+              disabled={isLoading}
+            >
               {isLoading ? "Enviando..." : "Enviar enlace"}
             </Button>
           </Form>
 
-          <Link href="/login" className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline">
+          <Link
+            href="/login"
+            className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
             <ArrowLeft className="h-4 w-4" /> Volver al inicio de sesión
           </Link>
         </div>
