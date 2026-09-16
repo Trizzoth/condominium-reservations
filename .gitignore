@@ -60,3 +60,5 @@ CLAUDE.md
 
 # pnpm
 pnpm-workspace.yaml
+playwright-report/
+test-results/
