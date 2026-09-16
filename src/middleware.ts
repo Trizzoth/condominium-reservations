@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { homeForRole } from "@/lib/auth-redirect";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -56,7 +57,9 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthPath && user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Ya logueado intentando entrar a /login|/register → a su panel según rol
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    return NextResponse.redirect(new URL(homeForRole(profile?.role), request.url));
   }
 
   return response;
