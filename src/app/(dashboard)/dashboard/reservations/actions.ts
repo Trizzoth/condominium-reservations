@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserEmailsByIds } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { sendEmail, reservationCreatedEmail, reservationApprovedEmail, reservationRejectedEmail } from "@/lib/emails";
+import QRCode from "qrcode";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -186,16 +187,25 @@ export async function approveReservationAction(reservationId: string) {
   if (recipientEmail) {
     const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
-    
+
+    // QR con el id para check-in en seguridad (si falla, el email va sin QR).
+    let qrCodeDataUrl: string | undefined;
+    try {
+      qrCodeDataUrl = await QRCode.toDataURL(reservation.id, { width: 160, margin: 1 });
+    } catch (err) {
+      console.error("QR generation failed:", err);
+    }
+
     await sendEmail({
       to: recipientEmail,
       subject: "✅ Tu reserva ha sido aprobada",
       html: reservationApprovedEmail({
-        userName: reservation.profiles.full_name || "Residente",
+        userName: reservation.profiles?.full_name || "Residente",
         areaName: reservation.common_areas?.name || "Área común",
         startTime: startFormatted,
         endTime: endFormatted,
         adminNotes: reservation.admin_notes || undefined,
+        qrCodeDataUrl,
       }),
     });
   }
