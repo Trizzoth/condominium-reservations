@@ -1,8 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { signInSchema, signUpSchema, magicLinkSchema, profileSchema } from "@/lib/validations/auth";
-import { resolvePostLoginRedirect } from "@/lib/auth-redirect";
+import { signInSchema, signUpSchema, magicLinkSchema, profileSchema, forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/auth";
+import { resolvePostLoginRedirect, homeForRole } from "@/lib/auth-redirect";
 import { redirect } from "next/navigation";
 
 export async function signIn(formData: FormData) {
@@ -106,8 +106,7 @@ export async function sendMagicLink(formData: FormData) {
   return { success: "Revisa tu email para el enlace mágico" };
 }
 
-export async function updateProfile(formData: FormData) {
-  const validated = profileSchema.safeParse({
+export async function updateProfile(formData: FormData) {  const validated = profileSchema.safeParse({
     fullName: formData.get("fullName"),
     apartment: formData.get("apartment"),
     phone: formData.get("phone"),
@@ -139,4 +138,53 @@ export async function updateProfile(formData: FormData) {
   }
 
   return { success: "Perfil actualizado" };
+}
+
+export async function requestPasswordReset(formData: FormData) {
+  const validated = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!validated.success) {
+    return { error: validated.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const { error } = await supabase.auth.resetPasswordForEmail(validated.data.email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+  });
+
+  if (error) {
+    return { error: { form: [error.message] } };
+  }
+
+  return { success: "Revisa tu email: enviamos un enlace para restablecer tu contraseña" };
+}
+
+export async function updatePassword(formData: FormData) {
+  const validated = resetPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!validated.success) {
+    return { error: validated.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: { form: ["Sesión inválida o enlace vencido. Pide un nuevo enlace."] } };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: validated.data.password });
+
+  if (error) {
+    return { error: { form: [error.message] } };
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  redirect(homeForRole(profile?.role));
 }

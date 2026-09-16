@@ -26,6 +26,8 @@ export function resolvePostLoginRedirect(
   const home = homeForRole(role);
   if (!next || !next.startsWith("/") || next.startsWith("//")) return home;
   if (next === "/") return home;
+  // Flujo de recuperación: siempre permitido (la sesión viene del email).
+  if (next === "/reset-password") return next;
   if (allowedPrefixes(role).some((p) => next === p || next.startsWith(p + "/"))) {
     return next;
   }

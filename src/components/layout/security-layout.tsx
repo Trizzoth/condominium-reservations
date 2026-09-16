@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User as UserIcon, LayoutDashboard, Shield, Clock, UserCheck } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "./mobile-nav";
@@ -63,10 +63,10 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Solo rutas que existen: el panel de hoy es el check-in.
+  // (Historial/Check-in separados van en Fase 3.)
   const navItems = [
     { href: "/security", label: "Hoy", icon: LayoutDashboard },
-    { href: "/security/checkin", label: "Check-in", icon: UserCheck },
-    { href: "/security/history", label: "Historial", icon: Clock },
   ];
 
   return (
