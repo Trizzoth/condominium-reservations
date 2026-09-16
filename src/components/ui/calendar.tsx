@@ -61,32 +61,16 @@ export function Calendar({
         disabled: "text-muted-foreground/30 cursor-not-allowed opacity-50",
       }}
       components={{
-        Day: ({ day, modifiers, ...rest }) => {
+        // NOTA: en DayPicker v9 el click vive en DayButton, no en Day.
+        // Sobrescribir Day rompía la selección; DayButton conserva el onClick interno.
+        DayButton: ({ day, modifiers, ...rest }) => {
           const date = day.date;
           const isUnavail = isDateInArray(date, unavailableDays);
-          const isDisabledDay = modifiers.disabled;
-          const isSelected = modifiers.selected;
-          const isOutside = modifiers.outside;
-          const isRangeStart = modifiers.range_start;
-          const isRangeEnd = modifiers.range_end;
-          const isRangeMiddle = modifiers.range_middle;
-
-          if (isOutside) {
-            return (
-              <button
-                type="button"
-                className="h-full w-full rounded-full text-muted-foreground/50 pointer-events-none"
-                disabled
-                aria-label={`Día ${day.date.getDate()}, fuera del mes actual`}
-              >
-                {day.date.getDate()}
-              </button>
-            );
-          }
 
           return (
             <button
               type="button"
+              {...rest}
               className={cn(
                 "h-full w-full rounded-full hover:bg-accent focus:bg-accent focus:outline-none transition-colors",
                 isUnavail && "bg-destructive/10 text-destructive border border-destructive/20 cursor-not-allowed opacity-60",
@@ -96,7 +80,7 @@ export function Calendar({
                 modifiers.range_end && "bg-primary text-primary-foreground rounded-r-full",
                 modifiers.range_middle && "bg-primary/20 text-primary",
               )}
-              disabled={modifiers.disabled || isUnavail}
+              disabled={rest.disabled || isUnavail}
               aria-label={`Día ${day.date.getDate()}${modifiers.disabled ? ", deshabilitado" : ""}${isUnavail ? ", sin horario disponible" : ""}`}
             >
               {day.date.getDate()}

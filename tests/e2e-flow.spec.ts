@@ -10,7 +10,7 @@ test.describe('MVP Reservas Condominio - Páginas principales', () => {
 
   test('Register page carga correctamente', async ({ page }) => {
     await page.goto('http://localhost:3000/register');
-    await expect(page.locator('h2:has-text("Crear cuenta")')).toBeVisible();
+    await expect(page.locator('h1:has-text("Crear cuenta")')).toBeVisible();
     await expect(page.locator('button:has-text("Crear cuenta")')).toBeVisible();
   });
 

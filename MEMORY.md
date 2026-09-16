@@ -169,3 +169,17 @@ $$;
 - Vercel: https://vercel.com
 - shadcn/ui: https://ui.shadcn.com
 - Next.js Docs: https://nextjs.org/docs
+
+## Preferencias del Usuario (2026-09-16)
+
+- **Ejecutar antes de pedir**: el usuario prefiere que el agente ejecute código y acciones directamente (Supabase REST API, psql, CLI) en lugar de darle pasos manuales. Solo pedir pasos manuales cuando sea técnicamente imposible (OAuth en navegador, clicks en dashboards).
+- **Accesos verificados que funcionan desde terminal**:
+  - Supabase REST API (`/rest/v1/*` + Auth Admin API) con `sb_secret_*` como `apikey` + `Authorization: Bearer` → bypass RLS, funciona.
+  - Conexión directa Postgres (`db.<ref>.supabase.co:5432`) → **NO funciona** (DNS solo IPv6, red inaccesible).
+  - `sb_secret_*` como Bearer en `/auth/v1/admin/*` → SÍ funciona (lista/lee usuarios).
+- **Cuentas de prueba existentes** (todas confirmadas, roles OK en `profiles`):
+  - `admin@test.com` / Admin123 → `eed8373b-...` → admin
+  - `security@test.com` / Security123 → `78ef91b2-...` → security
+  - `resident@test.com` / Resident123 → `baec1006-...` → resident
+  - `andypiedravarela@gmail.com` → `bb2bb9ed-...` → resident (cuenta del dueño)
+- **Nota**: signups vía REST devuelven ID pero pueden no persistir si el rate limit de emails está activo; verificar siempre con `GET /auth/v1/admin/users`.
