@@ -34,7 +34,7 @@ export default async function AdminReservationsPage() {
 
   return (
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Todas las reservas</h1>
             <p className="text-muted-foreground mt-1">Gestiona y filtra todas las reservas del sistema</p>
