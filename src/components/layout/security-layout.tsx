@@ -16,12 +16,14 @@ import { LogOut, User as UserIcon, LayoutDashboard, Shield } from "lucide-react"
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "./mobile-nav";
+import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
 
 export function SecurityLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  useRealtimeRefresh();
 
   useEffect(() => {
     const supabase = createBrowserClient(

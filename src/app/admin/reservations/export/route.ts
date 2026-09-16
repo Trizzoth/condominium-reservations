@@ -18,6 +18,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
+  const when = searchParams.get("when");
 
   const adminDb = createAdminClient();
   let query = adminDb
@@ -29,11 +30,35 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return new Response(error.message, { status: 500 });
 
+  const now = new Date();
+  const inWhen = (iso: string) => {
+    if (!when || when === "all") return true;
+    const d = new Date(iso);
+    if (when === "today") {
+      const s = new Date(now);
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(now);
+      e.setHours(23, 59, 59, 999);
+      return d >= s && d <= e;
+    }
+    if (when === "week") {
+      const s = new Date(now);
+      s.setDate(now.getDate() - now.getDay());
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(s);
+      e.setDate(s.getDate() + 6);
+      e.setHours(23, 59, 59, 999);
+      return d >= s && d <= e;
+    }
+    return true;
+  };
+  const filtered = (data || []).filter((r) => inWhen(r.start_time));
+
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const rows: string[][] = [
     ["id", "residente", "apartamento", "area", "inicio", "fin", "estado", "creada"],
   ];
-  for (const r of data || []) {
+  for (const r of filtered) {
     rows.push([
       r.id,
       r.profiles?.full_name || "",
@@ -46,7 +71,7 @@ export async function GET(request: Request) {
     ]);
   }
   const csv = "﻿" + rows.map((row) => row.map(esc).join(",")).join("\n");
-  const suffix = status && status !== "all" ? `-${status}` : "";
+  const suffix = `${status && status !== "all" ? `-${status}` : ""}${when && when !== "all" ? `-${when}` : ""}`;
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

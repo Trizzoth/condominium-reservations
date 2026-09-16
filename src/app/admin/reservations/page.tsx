@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Building2, Clock, CheckCircle, XCircle } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 
 const STATUS_FILTERS = [
@@ -15,14 +15,20 @@ const STATUS_FILTERS = [
   { value: "no_show", label: "No-show" },
 ] as const;
 
+const WHEN_FILTERS = [
+  { value: "all", label: "Siempre" },
+  { value: "today", label: "Hoy" },
+  { value: "week", label: "Esta semana" },
+] as const;
+
 export default async function AdminReservationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; when?: string }>;
 }) {
   // Service-role: RLS solo deja ver el profile propio. Layout ya validó admin.
   const supabase = createAdminClient();
-  const { status = "all" } = await searchParams;
+  const { status = "all", when = "all" } = await searchParams;
 
   // NOTA: `profiles` no tiene columna `email` (vive en auth.users):
   // se resuelve vía Admin API con service-role (solo servidor).
@@ -38,10 +44,29 @@ export default async function AdminReservationsPage({
     ...r,
     resident_email: emailsByUserId.get(r.user_id as string) || null,
   }));
-  const visible =
-    status === "all"
-      ? reservationsWithEmail
-      : reservationsWithEmail.filter((r) => r.status === status);
+  const visible = (() => {
+    const now = new Date();
+    const dayStart = startOfDay(now);
+    const dayEnd = endOfDay(now);
+    const weekStart = startOfWeek(now);
+    const weekEnd = endOfWeek(now);
+    return reservationsWithEmail.filter((r) => {
+      if (status !== "all" && r.status !== status) return false;
+      if (when === "all") return true;
+      const d = parseISO(r.start_time);
+      if (when === "today") return d >= dayStart && d <= dayEnd;
+      if (when === "week") return d >= weekStart && d <= weekEnd;
+      return true;
+    });
+  })();
+
+  const qs = (s: string, w: string, base = "/admin/reservations") => {
+    const p = new URLSearchParams();
+    if (s !== "all") p.set("status", s);
+    if (w !== "all") p.set("when", w);
+    const q = p.toString();
+    return `${base}${q ? `?${q}` : ""}`;
+  };
 
   const statusConfig = {
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -60,37 +85,45 @@ export default async function AdminReservationsPage({
             Gestiona y filtra todas las reservas del sistema
           </p>
         </div>
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-2">
-            {STATUS_FILTERS.map((f) => (
-              <a
-                key={f.value}
-                href={
-                  f.value === "all"
-                    ? "/admin/reservations"
-                    : `/admin/reservations?status=${f.value}`
-                }
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  status === f.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
-                }`}
-              >
-                {f.label}
-              </a>
-            ))}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              {STATUS_FILTERS.map((f) => (
+                <a
+                  key={f.value}
+                  href={qs(f.value, when)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    status === f.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </a>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {WHEN_FILTERS.map((f) => (
+                <a
+                  key={f.value}
+                  href={qs(status, f.value)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    when === f.value
+                      ? "bg-secondary text-secondary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </a>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <a href={qs(status, when, "/admin/reservations/export")} download>
+                  Exportar CSV
+                </a>
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" asChild>
-              <a
-                href={`/admin/reservations/export${status === "all" ? "" : `?status=${status}`}`}
-                download
-              >
-                Exportar CSV
-              </a>
-            </Button>
-          </div>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { canCancelReservation } from "@/lib/reservation-rules";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -20,6 +21,15 @@ async function cancelReservation(formData: FormData) {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
   if (!currentUser) return;
+  // Defensa: verificar ventana de 4h en servidor (la UI también la aplica).
+  const { data: target } = await supabase
+    .from("reservations")
+    .select("start_time")
+    .eq("id", reservationId)
+    .eq("user_id", currentUser.id)
+    .eq("status", "pending")
+    .single();
+  if (!target || !canCancelReservation(target.start_time)) return;
   await supabase
     .from("reservations")
     .update({ status: "cancelled", updated_at: new Date().toISOString() })
@@ -81,7 +91,8 @@ export default async function ReservationsPage() {
           {reservations!.map((reservation) => {
             const config = statusConfig[reservation.status as keyof typeof statusConfig];
             const Icon = config?.icon || Calendar;
-            const canCancel = reservation.status === "pending";
+            const canCancel =
+              reservation.status === "pending" && canCancelReservation(reservation.start_time);
             return (
               <Card key={reservation.id}>
                 <CardContent className="py-4">
@@ -117,7 +128,7 @@ export default async function ReservationsPage() {
                       >
                         {config?.label}
                       </span>
-                      {canCancel && (
+                      {canCancel ? (
                         <form action={cancelReservation}>
                           <input type="hidden" name="reservationId" value={reservation.id} />
                           <Button
@@ -130,6 +141,15 @@ export default async function ReservationsPage() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </form>
+                      ) : (
+                        reservation.status === "pending" && (
+                          <span
+                            className="text-xs text-muted-foreground"
+                            title="Solo se puede cancelar con 4h o más de anticipación"
+                          >
+                            No cancelable
+                          </span>
+                        )
                       )}
                     </div>
                   </div>
