@@ -1,12 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Calendar, Plus, Trash2, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Calendar, Plus, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+
+// Server Action: cancela una reserva propia en estado pendiente.
+// Se usa como `action` de un <form>, que es la forma válida de invocar
+// Server Actions desde un Server Component (onClick no funciona aquí).
+async function cancelReservation(formData: FormData) {
+  "use server";
+  const reservationId = formData.get("reservationId");
+  if (typeof reservationId !== "string" || reservationId.length === 0) return;
+  const supabase = await createClient();
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+  if (!currentUser) return;
+  await supabase
+    .from("reservations")
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
+    .eq("id", reservationId)
+    .eq("user_id", currentUser.id)
+    .eq("status", "pending");
+  revalidatePath("/dashboard/reservations");
+}
 
 export default async function ReservationsPage() {
   const supabase = await createClient();
@@ -25,19 +45,8 @@ export default async function ReservationsPage() {
     approved: { label: "Aprobada", color: "bg-green-100 text-green-800", icon: CheckCircle },
     rejected: { label: "Rechazada", color: "bg-red-100 text-red-800", icon: XCircle },
     cancelled: { label: "Cancelada", color: "bg-gray-100 text-gray-800", icon: XCircle },
+    no_show: { label: "No se presentó", color: "bg-red-100 text-red-800", icon: XCircle },
   } as const;
-
-  async function cancelReservation(reservationId: string) {
-    const supabase = await createClient();
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) return;
-    await supabase
-      .from("reservations")
-      .update({ status: "cancelled", updated_at: new Date().toISOString() })
-      .eq("id", reservationId)
-      .eq("user_id", currentUser.id)
-      .eq("status", "pending");
-  }
 
   return (
     <DashboardLayout>
@@ -77,7 +86,7 @@ export default async function ReservationsPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-lg">
-                          <Icon className="h-6 w-6" style={{ color: config?.color.split(" ")[1]?.replace("text-", "") || "" }} />
+                          <Icon className="h-6 w-6 text-primary" />
                         </div>
                         <div>
                           <p className="font-medium text-lg">{reservation.common_areas?.name || "Área común"}</p>
@@ -99,14 +108,18 @@ export default async function ReservationsPage() {
                           {config?.label}
                         </span>
                         {canCancel && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => cancelReservation(reservation.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <form action={cancelReservation}>
+                            <input type="hidden" name="reservationId" value={reservation.id} />
+                            <Button
+                              type="submit"
+                              variant="ghost"
+                              size="icon"
+                              className="text-red-600 hover:text-red-700"
+                              title="Cancelar reserva"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </form>
                         )}
                       </div>
                     </div>

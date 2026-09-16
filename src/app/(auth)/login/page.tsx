@@ -7,7 +7,6 @@ import Link from "next/link";
 import { signIn, sendMagicLink } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, SignInInput } from "@/lib/validations/auth";
@@ -16,7 +15,6 @@ import {
   FormItem,
   FormLabel,
   FormControl,
-  FormDescription,
   FormMessage,
 } from "@/components/forms/form";
 import { Building2, Mail, Lock, Sparkles } from "lucide-react";

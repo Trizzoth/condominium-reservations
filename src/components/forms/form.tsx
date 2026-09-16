@@ -1,18 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
-export interface FormProps extends React.FormHTMLAttributes<HTMLFormElement> {}
+export type FormProps = React.FormHTMLAttributes<HTMLFormElement>;
 
 export const Form = ({ children, ...props }: FormProps) => {
   return <form {...props}>{children}</form>;
 }
 
-export interface FormItemProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type FormItemProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(
   ({ className, ...props }, ref) => (
@@ -21,7 +21,7 @@ export const FormItem = React.forwardRef<HTMLDivElement, FormItemProps>(
 );
 FormItem.displayName = "FormItem";
 
-export interface FormLabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
+export type FormLabelProps = React.LabelHTMLAttributes<HTMLLabelElement>;
 
 export const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(
   ({ className, ...props }, ref) => (
@@ -30,7 +30,7 @@ export const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(
 );
 FormLabel.displayName = "FormLabel";
 
-export interface FormControlProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type FormControlProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const FormControl = React.forwardRef<HTMLDivElement, FormControlProps>(
   ({ className, ...props }, ref) => (
@@ -39,7 +39,7 @@ export const FormControl = React.forwardRef<HTMLDivElement, FormControlProps>(
 );
 FormControl.displayName = "FormControl";
 
-export interface FormDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
+export type FormDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
 
 export const FormDescription = React.forwardRef<HTMLParagraphElement, FormDescriptionProps>(
   ({ className, ...props }, ref) => (
@@ -48,11 +48,10 @@ export const FormDescription = React.forwardRef<HTMLParagraphElement, FormDescri
 );
 FormDescription.displayName = "FormDescription";
 
-export interface FormMessageProps extends React.HTMLAttributes<HTMLParagraphElement> {}
+export type FormMessageProps = React.HTMLAttributes<HTMLParagraphElement>;
 
 export const FormMessage = React.forwardRef<HTMLParagraphElement, FormMessageProps>(
   ({ className, children, ...props }, ref) => {
-    const formContext = useFormContext();
     return (
       <p ref={ref} className={cn("text-sm font-medium text-destructive", className)} {...props}>
         {children}
@@ -62,7 +61,7 @@ export const FormMessage = React.forwardRef<HTMLParagraphElement, FormMessagePro
 );
 FormMessage.displayName = "FormMessage";
 
-export interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type FormInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
   ({ className, ...props }, ref) => (
@@ -71,4 +70,4 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
 );
 FormInput.displayName = "FormInput";
 
-export { Controller, useFormContext };
+export { Controller };

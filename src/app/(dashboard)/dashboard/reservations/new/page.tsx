@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -14,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar, Clock, AlertCircle, CheckCircle, Loader2, CalendarDays } from "lucide-react";
-import { format, startOfDay, isBefore, addDays } from "date-fns";
+import { format, startOfDay, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { createBrowserClient } from "@supabase/ssr";
@@ -46,9 +45,13 @@ export default function NewReservationPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
   // Fetch areas and schedules on mount
@@ -83,7 +86,7 @@ export default function NewReservationPage() {
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [supabase]);
 
   // Generate time slots for selected date
   const getTimeSlots = (date: Date): TimeSlot[] => {

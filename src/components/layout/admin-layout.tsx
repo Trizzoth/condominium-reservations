@@ -12,14 +12,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User as UserIcon, LayoutDashboard, Settings, Home, Building2, CalendarDays, Users } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Building2, CalendarDays, Users } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const supabase = createBrowserClient(
@@ -49,7 +50,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    router.push("/login");
+    router.refresh();
   };
 
   if (loading) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -23,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Clock, Loader2, CalendarDays } from "lucide-react";
+import { Plus, Edit, Trash2, Loader2, CalendarDays } from "lucide-react";
 
 const DAYS = [
   { value: 0, label: "Domingo" },
@@ -68,31 +67,37 @@ export default function AdminSchedulesPage() {
     max_duration_hours: 4,
   };
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
-  const fetchData = async () => {
-    setLoading(true);
-    const [areasRes, schedulesRes] = await Promise.all([
+  // Los setState viven en callbacks de promesa (no en el cuerpo síncrono
+  // del efecto): es el patrón documentado de fetch + setState al completar.
+  const fetchData = useCallback(() => {
+    Promise.all([
       supabase.from("common_areas").select("id, name").eq("is_active", true).order("name"),
       supabase
         .from("availability_schedules")
         .select("*, common_areas(name)")
         .order("common_area_id")
         .order("day_of_week"),
-    ]);
-    if (areasRes.error) setError(areasRes.error.message);
-    else setAreas(areasRes.data || []);
-    if (schedulesRes.error) setError(schedulesRes.error.message);
-    else setSchedules(schedulesRes.data || []);
-    setLoading(false);
-  };
+    ]).then(([areasRes, schedulesRes]) => {
+      if (areasRes.error) setError(areasRes.error.message);
+      else setAreas(areasRes.data || []);
+      if (schedulesRes.error) setError(schedulesRes.error.message);
+      else setSchedules(schedulesRes.data || []);
+      setLoading(false);
+    });
+  }, [supabase]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,19 +1,30 @@
 import { createClient } from "@/lib/supabase/server";
+import { getUserEmailsByIds } from "@/lib/supabase/admin";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Building2, Clock, CheckCircle, XCircle, MoreHorizontal, Filter } from "lucide-react";
+import { Calendar, Building2, Clock, CheckCircle, XCircle, Filter } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 export default async function AdminReservationsPage() {
   const supabase = await createClient();
 
+  // NOTA: `profiles` no tiene columna `email` (vive en auth.users):
+  // se resuelve vía Admin API con service-role (solo servidor).
   const { data: reservations } = await supabase
     .from("reservations")
-    .select("*, common_areas(name), profiles(full_name, apartment, email)")
+    .select("*, common_areas(name), profiles(full_name, apartment)")
     .order("created_at", { ascending: false });
+
+  const emailsByUserId = await getUserEmailsByIds(
+    (reservations || []).map((r) => r.user_id as string)
+  );
+  const reservationsWithEmail = (reservations || []).map((r) => ({
+    ...r,
+    resident_email: emailsByUserId.get(r.user_id as string) || null,
+  }));
 
   const statusConfig = {
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -99,7 +110,7 @@ export default async function AdminReservationsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {reservations?.map((r) => {
+                  {reservationsWithEmail?.map((r) => {
                     const config = statusConfig[r.status as keyof typeof statusConfig];
                     const Icon = config?.icon || Calendar;
                     return (
@@ -108,7 +119,7 @@ export default async function AdminReservationsPage() {
                           <div>
                             <p className="font-medium">{r.profiles?.full_name || "Sin nombre"}</p>
                             <p className="text-xs text-muted-foreground">
-                              {r.profiles?.apartment || "Sin apto"} · {r.profiles?.email}
+                              {r.profiles?.apartment || "Sin apto"} · {r.resident_email}
                             </p>
                           </div>
                         </td>

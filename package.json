@@ -1,5 +1,5 @@
 {
-  "name": "tmp-next",
+  "name": "condominium-reservations",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,8 @@
     "dev:open": "next dev & sleep 3 && xdg-open http://localhost:3000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

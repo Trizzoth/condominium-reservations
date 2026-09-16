@@ -9,14 +9,16 @@ interface EmailParams {
 }
 
 /**
- * Escapa caracteres HTML para prevenir XSS
+ * Escapa caracteres HTML para prevenir XSS en los templates de email.
+ * Los valores interpolados (nombres, notas del admin) pueden contener
+ * HTML inyectado, así que deben escaparse antes de insertarlos.
  */
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   return text
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, "\"")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
 
@@ -59,6 +61,8 @@ export function reservationCreatedEmail({
   endTime: string;
   reservationId: string;
 }) {
+  const safeUserName = escapeHtml(userName);
+  const safeAreaName = escapeHtml(areaName);
   return `
     <!DOCTYPE html>
     <html>
@@ -71,7 +75,7 @@ export function reservationCreatedEmail({
         <h1 style="color: white; margin: 0; font-size: 24px;">🏢 Reservas Condominio</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
-        <h2 style="color: #1f2937; margin-top: 0;">Hola ${userName},</h2>
+        <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
         <p style="color: #4b5563;">Tu solicitud de reserva ha sido <strong style="color: #3b82f6;">recibida correctamente</strong> y está pendiente de aprobación del administrador.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #3b82f6;">
@@ -79,7 +83,7 @@ export function reservationCreatedEmail({
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${areaName}</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${safeAreaName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Fecha y hora:</td>
@@ -124,6 +128,8 @@ export function reservationApprovedEmail({
   endTime: string;
   adminNotes?: string;
 }) {
+  const safeUserName = escapeHtml(userName);
+  const safeAreaName = escapeHtml(areaName);
   return `
     <!DOCTYPE html>
     <html>
@@ -136,7 +142,7 @@ export function reservationApprovedEmail({
         <h1 style="color: white; margin: 0; font-size: 24px;">✅ Reserva Aprobada</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
-        <h2 style="color: #1f2937; margin-top: 0;">¡Hola ${userName}!</h2>
+        <h2 style="color: #1f2937; margin-top: 0;">¡Hola ${safeUserName}!</h2>
         <p style="color: #4b5563;">¡Buenas noticias! Tu reserva ha sido <strong style="color: #10b981;">aprobada por el administrador</strong>.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #10b981;">
@@ -144,7 +150,7 @@ export function reservationApprovedEmail({
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${areaName}</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${safeAreaName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Fecha y hora:</td>
@@ -193,6 +199,8 @@ export function reservationRejectedEmail({
   endTime: string;
   adminNotes?: string;
 }) {
+  const safeUserName = escapeHtml(userName);
+  const safeAreaName = escapeHtml(areaName);
   return `
     <!DOCTYPE html>
     <html>
@@ -205,7 +213,7 @@ export function reservationRejectedEmail({
         <h1 style="color: white; margin: 0; font-size: 24px;">❌ Reserva Rechazada</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
-        <h2 style="color: #1f2937; margin-top: 0;">Hola ${userName},</h2>
+        <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
         <p style="color: #4b5563;">Tu solicitud de reserva ha sido <strong style="color: #ef4444;">rechazada por el administrador</strong>.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ef4444;">
@@ -213,7 +221,7 @@ export function reservationRejectedEmail({
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${areaName}</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${safeAreaName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Fecha y hora solicitada:</td>
@@ -260,6 +268,8 @@ export function reservationReminderEmail({
   startTime: string;
   endTime: string;
 }) {
+  const safeUserName = escapeHtml(userName);
+  const safeAreaName = escapeHtml(areaName);
   return `
     <!DOCTYPE html>
     <html>
@@ -272,7 +282,7 @@ export function reservationReminderEmail({
         <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Recordatorio de Reserva</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
-        <h2 style="color: #1f2937; margin-top: 0;">Hola ${userName},</h2>
+        <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
         <p style="color: #4b5563;">Te recordamos que tienes una reserva <strong style="color: #f59e0b;">mañana</strong>.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #f59e0b;">
@@ -280,7 +290,7 @@ export function reservationReminderEmail({
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
-              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${areaName}</td>
+              <td style="padding: 8px 0; color: #1f2937; font-weight: 600;">${safeAreaName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Fecha y hora:</td>
