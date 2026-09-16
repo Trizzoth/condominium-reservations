@@ -45,6 +45,8 @@ export async function signUp(formData: FormData) {
     options: {
       data: {
         full_name: validated.data.fullName,
+        apartment: validated.data.apartment,
+        phone: validated.data.phone,
       },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
     },
