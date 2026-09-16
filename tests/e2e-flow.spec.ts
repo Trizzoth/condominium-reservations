@@ -8,6 +8,24 @@ test.describe('MVP Reservas Condominio - Páginas principales', () => {
     await expect(page.locator('button:has-text("Enviar enlace mágico")')).toBeVisible();
   });
 
+  test('Forgot password carga correctamente', async ({ page }) => {
+    await page.goto('http://localhost:3000/forgot-password');
+    await expect(page.locator('h1:has-text("Recuperar contraseña")')).toBeVisible();
+    await expect(page.locator('button:has-text("Enviar enlace")')).toBeVisible();
+  });
+
+  test('Reset password sin sesión muestra enlace inválido', async ({ page }) => {
+    await page.goto('http://localhost:3000/reset-password');
+    await expect(page.locator('h1:has-text("Nueva contraseña")')).toBeVisible();
+    await expect(page.locator('text=Enlace inválido o vencido')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('Login enlaza a recuperar contraseña (ruta existe)', async ({ page }) => {
+    await page.goto('http://localhost:3000/login');
+    await page.getByRole('link', { name: '¿Olvidaste la contraseña?' }).click();
+    await expect(page).toHaveURL(/.*forgot-password/);
+  });
+
   test('Register page carga correctamente', async ({ page }) => {
     await page.goto('http://localhost:3000/register');
     await expect(page.locator('h1:has-text("Crear cuenta")')).toBeVisible();
