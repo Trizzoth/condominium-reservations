@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -179,7 +178,6 @@ export default function AdminSchedulesPage() {
   const formatTime = (time: string) => time.slice(0, 5);
 
   return (
-    <DashboardLayout>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -358,6 +356,5 @@ export default function AdminSchedulesPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
 }

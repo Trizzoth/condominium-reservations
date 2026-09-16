@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema, ProfileInput } from "@/lib/validations/auth";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import {
   Form,
   FormItem,
@@ -44,7 +43,6 @@ export default function ProfilePage() {
   }
 
   return (
-    <DashboardLayout>
       <div className="max-w-2xl">
         <h1 className="text-3xl font-bold tracking-tight mb-8">Mi perfil</h1>
 
@@ -110,6 +108,5 @@ export default function ProfilePage() {
           </Button>
         </Form>
       </div>
-    </DashboardLayout>
   );
 }

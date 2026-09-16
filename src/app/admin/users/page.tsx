@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +21,6 @@ export default async function AdminUsersPage() {
   } as const;
 
   return (
-    <AdminLayout>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -134,6 +132,5 @@ export default async function AdminUsersPage() {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
   );
 }

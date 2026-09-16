@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -49,7 +48,6 @@ export default async function ReservationsPage() {
   } as const;
 
   return (
-    <DashboardLayout>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -136,6 +134,5 @@ export default async function ReservationsPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

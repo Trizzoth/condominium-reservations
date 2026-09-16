@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -25,7 +24,6 @@ export default async function DashboardPage() {
     .eq("is_active", true);
 
   return (
-    <DashboardLayout>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Bienvenido, {profile?.full_name || user.email}</h1>
@@ -148,6 +146,5 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }
