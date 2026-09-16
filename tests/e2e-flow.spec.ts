@@ -26,6 +26,15 @@ test.describe('MVP Reservas Condominio - Páginas principales', () => {
     await expect(page).toHaveURL(/.*forgot-password/);
   });
 
+  test('PWA: manifest e icono responden', async ({ page }) => {
+    const manifest = await page.request.get('http://localhost:3000/manifest.webmanifest');
+    expect(manifest.status()).toBe(200);
+    const body = await manifest.json();
+    expect(body.name).toBe('Reservas Condominio');
+    const icon = await page.request.get('http://localhost:3000/icon.svg');
+    expect(icon.status()).toBe(200);
+  });
+
   test('Register page carga correctamente', async ({ page }) => {
     await page.goto('http://localhost:3000/register');
     await expect(page.locator('h1:has-text("Crear cuenta")')).toBeVisible();

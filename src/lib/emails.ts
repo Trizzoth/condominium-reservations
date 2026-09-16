@@ -123,12 +123,14 @@ export function reservationApprovedEmail({
   startTime,
   endTime,
   adminNotes,
+  qrCodeDataUrl,
 }: {
   userName: string;
   areaName: string;
   startTime: string;
   endTime: string;
   adminNotes?: string;
+  qrCodeDataUrl?: string;
 }) {
   const safeUserName = escapeHtml(userName);
   const safeAreaName = escapeHtml(areaName);
@@ -173,6 +175,12 @@ export function reservationApprovedEmail({
         </div>
 
         <p style="color: #6b7280; font-size: 14px;">Presenta este correo (o el código QR en la app) al llegar al área común para el check-in.</p>
+        ${qrCodeDataUrl ? `
+          <div style="text-align: center; margin: 20px 0;">
+            <img src="${qrCodeDataUrl}" alt="QR de check-in" width="160" height="160" style="border-radius: 8px; border: 1px solid #e5e7eb;" />
+            <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Muestra este código en seguridad</p>
+          </div>
+        ` : ""}
         
         <div style="text-align: center; margin-top: 30px;">
           <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/reservations" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
