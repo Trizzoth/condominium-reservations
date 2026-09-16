@@ -170,6 +170,25 @@ $$;
 - shadcn/ui: https://ui.shadcn.com
 - Next.js Docs: https://nextjs.org/docs
 
+## Apps y Extensiones Vinculadas (MCP + herramientas)
+
+**Config:** `~/.config/opencode/opencode.jsonc` (requiere reiniciar opencode tras cambios)
+
+| App / Servidor MCP | Estado | Alcance | Notas |
+|---|---|---|---|
+| `filesystem` (`@modelcontextprotocol/server-filesystem`) | ✅ Activo | `/home/trizzoth` lectura/escritura total | Ver `ACCESO_MCP.md` |
+| `playwright` (`@playwright/mcp@latest`) | ✅ Activo | Chromium en `~/.cache/ms-playwright` | Testing E2E, screenshots, automatización navegador |
+| `supabase` (remoto `mcp.supabase.com`, project `ytwixmzrzcawtoxzjkeo`) | ⚠️ Configurado, falta auth | features: docs, account, database, debugging, development, functions, branching (**ESCRITURA en prod, sin read-only**) | Falta: `opencode mcp auth supabase` en terminal + reiniciar opencode |
+
+**Herramientas CLI verificadas en la PC:**
+| Herramienta | Estado | Uso |
+|---|---|---|
+| `gh` (GitHub CLI) | ✅ Autenticado como Trizzoth | repos, PRs, issues |
+| `psql` 18 (instalado vía pacman) | ✅ | Conexión directa Postgres **NO funciona** (DNS solo IPv6, red inaccesible) |
+| `supabase` vía npx | ✅ | `link`, `db push`, `migration repair` (requiere `SUPABASE_ACCESS_TOKEN`) |
+| Supabase REST API (`/rest/v1/*`, `/auth/v1/admin/*`) | ✅ Funciona con `sb_secret_*` como `apikey` + Bearer (bypass RLS) | Crear usuarios, leer/escribir tablas |
+| Playwright vía npx | ✅ `@playwright/test 1.63.0` | `npx playwright test` (usa `playwright.config.ts`) |
+
 ## Preferencias del Usuario (2026-09-16)
 
 - **Ejecutar antes de pedir**: el usuario prefiere que el agente ejecute código y acciones directamente (Supabase REST API, psql, CLI) en lugar de darle pasos manuales. Solo pedir pasos manuales cuando sea técnicamente imposible (OAuth en navegador, clicks en dashboards).
