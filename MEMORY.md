@@ -82,14 +82,15 @@ availability_schedules (
 - [x] Admin: CRUD áreas comunes + horarios
 
 ### Fase 2 - Pulido (Semana 2)
-- [ ] Notificaciones email (Supabase Auth hooks / Resend)
-- [ ] Reglas de negocio: max horas/semana, anticipación mínima
-- [ ] Panel seguridad: check-in/check-out reservas
+- [x] Notificaciones email (Resend): confirmación reserva, aprobada/rechazada, recordatorio 24h (cron)
+- [x] Reglas de negocio: max 2 reservas/semana, anticipación 2h/30d, max 4h por reserva (configurable por área)
+- [x] Panel seguridad: check-in/check-out, lista hoy, estados (pendiente/dentro/salió/no-show)
 
 ### Fase 3 - Nice to Have
 - [ ] PWA / offline básico
 - [ ] Sentry monitoring
 - [ ] Tests E2E (Playwright)
+- [ ] QR codes en emails para check-in rápido
 
 ## Estado Actual (2026-09-16)
 
@@ -104,8 +105,9 @@ availability_schedules (
 - ✅ Git flow configurado: `main` (producción) ← `develop` (integración) ← `feature/*`
 - ✅ **Auth flow COMPLETADO** (Issue #1 merged): login, register, magic link, profile, dashboard, admin panel
 - ✅ **Reservations CRUD COMPLETADO** (Issue #2 merged): calendar visual, admin areas/schedules/users/reservations
-- ✅ Supabase project creado + schema ejecutado
-- ✅ .env.local configurado
+- ✅ **Phase 2 COMPLETADO** (Issue #3 merged): Resend emails, business validations, security panel
+- ✅ Supabase project creado + schema ejecutado + migration_security.sql
+- ✅ .env.local configurado (incluye RESEND_API_KEY)
 
 ## Próximos Pasos Inmediatos
 
@@ -120,14 +122,16 @@ availability_schedules (
 9. ✅ **Crear Issue #1** → COMPLETADO + MERGED
 10. ✅ **Crear rama** `feature/auth-flow` → COMPLETADO + MERGED
 11. ✅ **Crear Issue #2** → COMPLETADO + MERGED
+12. ✅ **Crear Issue #3** → COMPLETADO + MERGED
 
 ---
 
-### 🔄 SIGUIENTE: Issue #3 - Fase 2: Notifications, Business Rules, Security Panel
-- [ ] Notificaciones email (Resend): confirmación reserva, aprobada/rechazada, recordatorio 24h
-- [ ] Validaciones negocio: max 2 reservas/semana, anticipación 2h/30d, max 4h por reserva
-- [ ] Panel seguridad: check-in/check-out, QR codes, lista hoy
-- [ ] Tests unitarios básicos
+### 🔄 SIGUIENTE: Issue #4 - Fase 3: Nice to Have
+- [ ] PWA / offline básico (service worker, manifest)
+- [ ] Sentry monitoring (error tracking)
+- [ ] Tests E2E (Playwright): auth flow, reservas, admin
+- [ ] QR codes en emails de confirmación para check-in rápido
+- [ ] Tests unitarios (Vitest): validaciones, utils
 
 ## Credenciales / Secrets (NO COMMITEAR)
 

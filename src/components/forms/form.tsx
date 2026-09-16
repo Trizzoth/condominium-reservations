@@ -53,7 +53,6 @@ export interface FormMessageProps extends React.HTMLAttributes<HTMLParagraphElem
 export const FormMessage = React.forwardRef<HTMLParagraphElement, FormMessageProps>(
   ({ className, children, ...props }, ref) => {
     const formContext = useFormContext();
-    // Get error from form state
     return (
       <p ref={ref} className={cn("text-sm font-medium text-destructive", className)} {...props}>
         {children}
