@@ -83,12 +83,6 @@ export async function signUp(formData: FormData) {
   redirect("/dashboard");
 }
 
-export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
-}
-
 export async function sendMagicLink(formData: FormData) {
   const validated = magicLinkSchema.safeParse({
     email: formData.get("email"),

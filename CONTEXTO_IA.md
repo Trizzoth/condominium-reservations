@@ -46,13 +46,12 @@ Next.js 16 (App Router) + TypeScript strict + Tailwind v4 + shadcn/ui + Supabase
 | ★ `VERIFICACION.md`                                                 | Auditoría honesta 2026-09-16 (hallazgos con archivo+línea)         | SÍ                     |
 | ★ `CHANGELOG.md`                                                    | Historial de cambios y fixes                                       | SÍ                     |
 | ★ `FEATURES.md`                                                     | Qué está implementado vs pendiente (detalle)                       | Si se necesita detalle |
-| `memory.md` (minúsculas)                                            | **NO es memoria del proyecto**: son specs de hardware/OS de la PC  | Solo si se pide specs  |
+| `SPECS_PC.md` (antes `memory.md`, renombrado)                         | **NO es memoria del proyecto**: son specs de hardware/OS de la PC  | Solo si se pide specs  |
 | `RESUMEN_PROYECTO.md`                                               | Resumen ejecutivo viejo (puede estar desactualizado)               | Solo referencia        |
 | `IDEA_PRINCIPAL.md`                                                 | Idea/producto original                                             | Contexto producto      |
 | `guia-onboarding-mvp.md`                                            | Guía onboarding hackathon                                          | Contexto equipo        |
-| `issue2-body.md`, `issue3-body.md`, `pr-body.md`                    | Temporales para crear issues/PRs (ya mergeados)                    | Borrables              |
 | `ACCESO_MCP.md`                                                     | Capacidades MCP filesystem+playwright                              | Contexto herramientas  |
-| `schema.sql`, `migration_security.sql`, `migration_fix_trigger.sql` | SQL aplicado en Supabase                                           | Si se toca BD          |
+| `supabase/migrations/*.sql` (el SQL de raíz se movió aquí)          | SQL aplicado en Supabase                                           | Si se toca BD          |
 | Este archivo `CONTEXTO_IA.md`                                       | Comprimido para alimentar IAs                                      | —                      |
 
 ## 7. Apps/extensiones vinculadas (MCP en `~/.config/opencode/opencode.jsonc`)

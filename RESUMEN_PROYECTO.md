@@ -1,5 +1,9 @@
 # Resumen Ejecutivo - MVP Reservas Condominio
 
+> ⚠️ DOCUMENTO DESACTUALIZADO (quedó en commit `eb417bb`). Fuentes vigentes:
+> `MEMORY.md` (estado), `CHANGELOG.md` (historial), `FEATURES.md` (alcance).
+> Se conserva solo como referencia histórica.
+
 ## ✅ Estado: PRODUCCIÓN READY
 
 **URL:** https://condominium-reservations-gbsx.vercel.app
