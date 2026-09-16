@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -150,7 +149,6 @@ export default function AdminAreasPage() {
   };
 
   return (
-    <DashboardLayout>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -315,6 +313,5 @@ export default function AdminAreasPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
 }

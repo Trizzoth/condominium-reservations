@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { getUserEmailsByIds } from "@/lib/supabase/admin";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +36,6 @@ export default async function AdminPage() {
   } as const;
 
   return (
-    <DashboardLayout>
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
@@ -171,6 +169,5 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
   );
 }

@@ -15,7 +15,6 @@ import {
 import { Calendar, Clock, AlertCircle, CheckCircle, Loader2, CalendarDays } from "lucide-react";
 import { format, startOfDay, addDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { createBrowserClient } from "@supabase/ssr";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
@@ -228,7 +227,6 @@ export default function NewReservationPage() {
   };
 
   return (
-    <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -434,6 +432,5 @@ export default function NewReservationPage() {
           </form>
         )}
       </div>
-    </DashboardLayout>
   );
 }

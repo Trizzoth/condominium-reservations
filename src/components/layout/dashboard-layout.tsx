@@ -15,6 +15,7 @@ import {
 import { LogOut, User as UserIcon, LayoutDashboard, Settings, Home, Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { MobileNav } from "./mobile-nav";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -79,7 +80,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md glass">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-2 md:gap-8">
+              <MobileNav items={navItems} currentPath={pathname} />
               <Link href="/dashboard" className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-soft">
                   <Building2 className="h-5 w-5 text-primary-foreground" />
