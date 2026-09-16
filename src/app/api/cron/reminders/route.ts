@@ -4,9 +4,10 @@ import { format, parseISO, addDays, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { NextResponse } from "next/server";
 
-// This endpoint should be called by Vercel Cron or Supabase pg_cron daily
-// Vercel Cron: add to vercel.json: { "crons": [{ "path": "/api/cron/reminders", "schedule": "0 9 * * *" }] }
-// Runs at 9 AM daily
+// This endpoint should be called by Vercel Cron daily (ver vercel.json).
+// Hace dos trabajos en una sola invocación (el plan limita los cron jobs):
+// 1) recordatorios 24h, 2) marcar no-show de aprobadas vencidas sin check-in.
+// Runs at 9 AM daily (America/Bogota = 14:00 UTC).
 
 export async function GET(request: Request) {
   // Verify cron secret to prevent unauthorized calls
@@ -44,42 +45,58 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (!reservations || reservations.length === 0) {
-    return NextResponse.json({ message: "No reminders to send", count: 0 });
-  }
-
   let sent = 0;
   let failed = 0;
 
-  const emailsByUserId = await getUserEmailsByIds(
-    reservations.map((r) => r.user_id as string)
-  );
+  if (reservations && reservations.length > 0) {
+    const emailsByUserId = await getUserEmailsByIds(
+      reservations.map((r) => r.user_id as string)
+    );
 
-  for (const reservation of reservations) {
-    const recipientEmail = emailsByUserId.get(reservation.user_id as string);
-    if (!recipientEmail) continue;
+    for (const reservation of reservations) {
+      const recipientEmail = emailsByUserId.get(reservation.user_id as string);
+      if (!recipientEmail) continue;
 
-    const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
-    const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
+      const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
+      const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
 
-    const result = await sendEmail({
-      to: recipientEmail,
-      subject: "⏰ Recordatorio: Tu reserva es mañana",
-      html: reservationReminderEmail({
-        userName: reservation.profiles.full_name || "Residente",
-        areaName: reservation.common_areas?.name || "Área común",
-        startTime: startFormatted,
-        endTime: endFormatted,
-      }),
-    });
+      const result = await sendEmail({
+        to: recipientEmail,
+        subject: "⏰ Recordatorio: Tu reserva es mañana",
+        html: reservationReminderEmail({
+          userName: reservation.profiles?.full_name || "Residente",
+          areaName: reservation.common_areas?.name || "Área común",
+          startTime: startFormatted,
+          endTime: endFormatted,
+        }),
+      });
 
-    if (result.success) {
-      sent++;
-    } else {
-      failed++;
-      console.error("Failed to send reminder:", result.error);
+      if (result.success) {
+        sent++;
+      } else {
+        failed++;
+        console.error("Failed to send reminder:", result.error);
+      }
     }
   }
 
-  return NextResponse.json({ message: "Reminders processed", sent, failed, total: reservations.length });
+  // 2) Marcar no-show: aprobadas ya terminadas sin check-in.
+  const nowIso = new Date().toISOString();
+  const { data: marked, error: noShowError } = await supabase
+    .from("reservations")
+    .update({ status: "no_show", updated_at: nowIso })
+    .eq("status", "approved")
+    .lt("end_time", nowIso)
+    .is("checked_in_at", null)
+    .select("id");
+
+  if (noShowError) {
+    console.error("Cron no-show error:", noShowError);
+  }
+
+  return NextResponse.json({
+    message: "Cron processed",
+    reminders: { sent, failed, total: reservations?.length || 0 },
+    noShowsMarked: marked?.length || 0,
+  });
 }
