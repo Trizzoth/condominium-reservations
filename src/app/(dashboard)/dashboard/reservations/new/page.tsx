@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,32 +13,79 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, ChevronLeft, ChevronRight, Clock, AlertCircle, CheckCircle } from "lucide-react";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, addMonths, subMonths, isSameDay, isBefore, isAfter, parseISO } from "date-fns";
+import { Calendar, Clock, AlertCircle, CheckCircle, Loader2, CalendarDays } from "lucide-react";
+import { format, startOfDay, isBefore, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { createBrowserClient } from "@supabase/ssr";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface TimeSlot {
   time: string;
   available: boolean;
 }
 
+interface Area {
+  id: string;
+  name: string;
+  capacity: number;
+  rules: string;
+}
+
 export default function NewReservationPage() {
   const router = useRouter();
   const [selectedArea, setSelectedArea] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedStartTime, setSelectedStartTime] = useState<string>("");
   const [selectedEndTime, setSelectedEndTime] = useState<string>("");
-  const [areas, setAreas] = useState<Array<{ id: string; name: string; capacity: number; rules: string }>>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [schedules, setSchedules] = useState<Record<number, { open: string; close: string; maxDuration: number }>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [viewMonth, setViewMonth] = useState(new Date());
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  // Calcular slots de tiempo basado en horarios
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
+  // Fetch areas and schedules on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const { data: areasData } = await supabase
+        .from("common_areas")
+        .select("*")
+        .eq("is_active", true);
+
+      if (areasData) {
+        setAreas(areasData);
+        for (const area of areasData) {
+          const { data: schedData } = await supabase
+            .from("availability_schedules")
+            .select("*")
+            .eq("common_area_id", area.id);
+          if (schedData) {
+            const scheduleMap: Record<number, { open: string; close: string; maxDuration: number }> = {};
+            schedData.forEach((s) => {
+              scheduleMap[s.day_of_week] = {
+                open: s.open_time,
+                close: s.close_time,
+                maxDuration: s.max_duration_hours,
+              };
+            });
+            setSchedules((prev) => ({ ...prev, ...scheduleMap }));
+          }
+        }
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  // Generate time slots for selected date
   const getTimeSlots = (date: Date): TimeSlot[] => {
     const dayOfWeek = date.getDay();
     const schedule = schedules[dayOfWeek];
@@ -64,57 +111,17 @@ export default function NewReservationPage() {
     return slots;
   };
 
-  // Fetch areas and schedules
-  const fetchData = async () => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+  // Check real-time availability
+  const checkAvailability = async (date: Date, startTime: string, endTime: string): Promise<boolean> => {
+    if (!selectedArea) return false;
+    setCheckingAvailability(true);
 
-    const { data: areasData } = await supabase
-      .from("common_areas")
-      .select("*")
-      .eq("is_active", true);
-
-    if (areasData) {
-      setAreas(areasData);
-      // Fetch schedules for all areas
-      for (const area of areasData) {
-        const { data: schedData } = await supabase
-          .from("availability_schedules")
-          .select("*")
-          .eq("common_area_id", area.id);
-        if (schedData) {
-          const scheduleMap: Record<number, { open: string; close: string; maxDuration: number }> = {};
-          schedData.forEach((s) => {
-            scheduleMap[s.day_of_week] = {
-              open: s.open_time,
-              close: s.close_time,
-              maxDuration: s.max_duration_hours,
-            };
-          });
-          setSchedules((prev) => ({ ...prev, ...scheduleMap }));
-        }
-      }
-    }
-    setLoading(false);
-  };
-
-  // Check availability for selected slot
-  const checkAvailability = async () => {
-    if (!selectedArea || !selectedStartTime || !selectedEndTime) return;
-
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const start = new Date(selectedDate);
-    const [sh, sm] = selectedStartTime.split(":").map(Number);
+    const start = new Date(date);
+    const [sh, sm] = startTime.split(":").map(Number);
     start.setHours(sh, sm, 0, 0);
 
-    const end = new Date(selectedDate);
-    const [eh, em] = selectedEndTime.split(":").map(Number);
+    const end = new Date(date);
+    const [eh, em] = endTime.split(":").map(Number);
     end.setHours(eh, em, 0, 0);
 
     const { data, error } = await supabase
@@ -125,7 +132,39 @@ export default function NewReservationPage() {
       .lt("start_time", end.toISOString())
       .gt("end_time", start.toISOString());
 
+    setCheckingAvailability(false);
     return !error && (!data || data.length === 0);
+  };
+
+  // Handle date selection from calendar
+  const handleDateSelect = (date: Date | Date[] | { from: Date; to: Date } | undefined) => {
+    if (date && !Array.isArray(date) && !("from" in date)) {
+      setSelectedDate(date);
+      setSelectedStartTime("");
+      setSelectedEndTime("");
+    }
+  };
+
+  // Get unavailable dates (past dates + dates without schedule)
+  const getUnavailableDates = () => {
+    const today = startOfDay(new Date());
+    const dates: Date[] = [];
+    for (let i = 0; i < 90; i++) {
+      const d = addDays(today, i);
+      if (!schedules[d.getDay()]) {
+        dates.push(d);
+      }
+    }
+    return dates;
+  };
+
+  const getDisabledDates = () => {
+    const today = startOfDay(new Date());
+    const dates: Date[] = [];
+    for (let i = -365; i < 0; i++) {
+      dates.push(addDays(today, i));
+    }
+    return dates;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,22 +172,18 @@ export default function NewReservationPage() {
     setError(null);
     setSuccess(null);
 
-    if (!selectedArea || !selectedStartTime || !selectedEndTime) {
+    if (!selectedArea || !selectedDate || !selectedStartTime || !selectedEndTime) {
       setError("Selecciona área, fecha y hora");
       return;
     }
 
-    const available = await checkAvailability();
+    const available = await checkAvailability(selectedDate, selectedStartTime, selectedEndTime);
     if (!available) {
       setError("Ese horario ya está reservado. Elige otro.");
       return;
     }
 
     setSubmitting(true);
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
 
     const start = new Date(selectedDate);
     const [sh, sm] = selectedStartTime.split(":").map(Number);
@@ -174,33 +209,32 @@ export default function NewReservationPage() {
     }
   };
 
-  // Calendar helpers
-  const monthStart = startOfWeek(startOfMonth(viewMonth), { locale: es });
-  const monthEnd = endOfWeek(endOfMonth(viewMonth), { locale: es });
-  const days: Date[] = [];
-  let day = monthStart;
-  while (day <= monthEnd) {
-    days.push(day);
-    day = addDays(day, 1);
-  }
+  const timeSlots = selectedArea && selectedDate ? getTimeSlots(selectedDate) : [];
 
-  const isPast = (date: Date) => isBefore(date, startOfDay(new Date()));
-  const startOfDay = (d: Date) => { const nd = new Date(d); nd.setHours(0,0,0,0); return nd; };
-
-  const timeSlots = selectedArea ? getTimeSlots(selectedDate) : [];
+  const formatDuration = (start: string, end: string) => {
+    const startDate = new Date(`2000-01-01T${start}`);
+    const endDate = new Date(`2000-01-01T${end}`);
+    const diffMs = endDate.getTime() - startDate.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}min`;
+  };
 
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Nueva reserva</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <CalendarDays className="h-6 w-6" />
+            Nueva reserva
+          </h1>
           <p className="text-muted-foreground mt-1">Selecciona área, fecha y hora</p>
         </div>
 
         {loading ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
               <p className="mt-4 text-muted-foreground">Cargando áreas...</p>
             </CardContent>
           </Card>
@@ -220,7 +254,10 @@ export default function NewReservationPage() {
             {/* Step 1: Select Area */}
             <Card>
               <CardHeader>
-                <CardTitle>1. Elige el área común</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5" />
+                  1. Elige el área común
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Select value={selectedArea} onValueChange={setSelectedArea}>
@@ -251,81 +288,29 @@ export default function NewReservationPage() {
               </CardContent>
             </Card>
 
-            {/* Step 2: Select Date */}
+            {/* Step 2: Select Date with Calendar */}
             <Card>
               <CardHeader>
-                <CardTitle>2. Elige la fecha</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  2. Elige la fecha
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setViewMonth(subMonths(viewMonth, 1))}
-                      disabled={isBefore(viewMonth, startOfMonth(new Date()))}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-lg font-medium capitalize">
-                      {format(viewMonth, "MMMM yyyy", { locale: es })}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setViewMonth(addMonths(viewMonth, 1))}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1">
-                    {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((d) => (
-                      <div key={d} className="text-center text-xs text-muted-foreground py-1">
-                        {d}
-                      </div>
-                    ))}
-                    {days.map((d) => {
-                      const isCurrentMonth = d.getMonth() === viewMonth.getMonth();
-                      const isSelected = isSameDay(d, selectedDate);
-                      const isPastDay = isPast(d);
-                      const hasSchedule = schedules[d.getDay()];
-
-                      return (
-                        <button
-                          key={d.toISOString()}
-                          type="button"
-                          onClick={() => {
-                            if (!isPastDay && hasSchedule && isCurrentMonth) {
-                              setSelectedDate(d);
-                              setSelectedStartTime("");
-                              setSelectedEndTime("");
-                            }
-                          }}
-                          disabled={isPastDay || !hasSchedule || !isCurrentMonth}
-                          className={`
-                            aspect-square rounded-lg text-sm font-medium transition-all
-                            ${isSelected ? "bg-primary text-primary-foreground" : ""}
-                            ${isPastDay || !hasSchedule || !isCurrentMonth
-                              ? "text-muted-foreground/30 cursor-not-allowed"
-                              : "hover:bg-accent hover:text-accent-foreground"}
-                            ${!isCurrentMonth ? "opacity-50" : ""}
-                          `}
-                        >
-                          {d.getDate()}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {selectedDate && (
-                    <p className="text-sm text-muted-foreground">
-                      Seleccionado: {format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}
-                    </p>
-                  )}
-                </div>
+                <CalendarComponent
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  disabledDays={getDisabledDates()}
+                  unavailableDays={getUnavailableDates()}
+                />
+                {selectedDate && (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Seleccionado: {format(selectedDate, "EEEE d 'de' MMMM yyyy", { locale: es })}
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Días en rojo = sin horario configurado · Días grises = pasados
+                </p>
               </CardContent>
             </Card>
 
@@ -333,7 +318,10 @@ export default function NewReservationPage() {
             {selectedArea && selectedDate && schedules[selectedDate.getDay()] && (
               <Card>
                 <CardHeader>
-                  <CardTitle>3. Elige la hora</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    3. Elige la hora
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4">
@@ -373,10 +361,16 @@ export default function NewReservationPage() {
 
                   {selectedStartTime && selectedEndTime && (
                     <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                      <p>Duración: {format(new Date(`2000-01-01T${selectedEndTime}`), "HH:mm", { locale: es })} - {format(new Date(`2000-01-01T${selectedStartTime}`), "HH:mm", { locale: es })}</p>
+                      <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
                       <p className="text-muted-foreground">
                         Máx. {schedules[selectedDate.getDay()]?.maxDuration || 4} horas
                       </p>
+                      {checkingAvailability && (
+                        <p className="text-primary mt-1 flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Verificando disponibilidad...
+                        </p>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -384,7 +378,7 @@ export default function NewReservationPage() {
             )}
 
             {/* Submit */}
-            <Button type="submit" className="w-full" disabled={submitting || !selectedArea || !selectedStartTime || !selectedEndTime}>
+            <Button type="submit" className="w-full" disabled={submitting || !selectedArea || !selectedDate || !selectedStartTime || !selectedEndTime}>
               {submitting ? "Enviando..." : "Enviar solicitud de reserva"}
             </Button>
 

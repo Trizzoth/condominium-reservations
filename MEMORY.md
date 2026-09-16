@@ -98,11 +98,12 @@ availability_schedules (
 - ✅ Git 2.55.0
 - ✅ Proyecto Next.js 14 + TypeScript + Tailwind creado
 - ✅ Supabase client/server + middleware auth configurado
-- ✅ shadcn/ui components (button, input, label, card, dialog, select, form)
-- ✅ Repo GitHub creado: https://github.com/Trizzoth/miproyecto-reservas (privado)
+- ✅ shadcn/ui components (button, input, label, card, dialog, select, dropdown, avatar, badge, form)
+- ✅ Repo GitHub creado: https://github.com/Trizzoth/condominium-reservations (privado)
 - ✅ Git flow configurado: `main` (producción) ← `develop` (integración) ← `feature/*`
-- ⏳ Supabase project: **PENDIENTE CREAR**
-- ⏳ .env.local con credenciales: **PENDIENTE**
+- ✅ **Auth flow COMPLETADO** (Issue #1 merged): login, register, magic link, profile, dashboard, admin panel
+- ✅ Supabase project creado + schema ejecutado
+- ✅ .env.local configurado
 
 ## Próximos Pasos Inmediatos
 
@@ -111,11 +112,20 @@ availability_schedules (
 3. ✅ shadcn/ui + componentes base - COMPLETADO
 4. ✅ Supabase client/server + middleware - COMPLETADO
 5. ✅ Repo GitHub + git flow - COMPLETADO
-6. 🔄 **Crear proyecto Supabase** → copiar URL + anon key + service role key
-7. 🔄 **Crear `.env.local`** con credenciales Supabase
-8. 🔄 **Ejecutar SQL schema** en Supabase SQL Editor (ver MEMORY.md líneas 23-70)
-9. 🔄 **Crear Issue #1** en GitHub: "feat: Auth flow (login/register/magic link + perfil)"
-10. 🔄 **Crear rama** `feature/auth-flow` desde `develop`
+6. ✅ **Crear proyecto Supabase** → COMPLETADO
+7. ✅ **Crear `.env.local`** con credenciales Supabase → COMPLETADO
+8. ✅ **Ejecutar SQL schema** en Supabase SQL Editor → COMPLETADO
+9. ✅ **Crear Issue #1** → COMPLETADO + MERGED
+10. ✅ **Crear rama** `feature/auth-flow` → COMPLETADO + MERGED
+
+---
+
+### 🔄 SIGUIENTE: Issue #2 - Reservations CRUD & Calendar
+- [ ] Calendar visual mejorado (react-day-picker)
+- [ ] Admin: CRUD áreas comunes + horarios
+- [ ] Validaciones negocio: max horas/semana, anticipación
+- [ ] Notificaciones email (Resend)
+- [ ] Panel seguridad check-in/out
 
 ## Credenciales / Secrets (NO COMMITEAR)
 
