@@ -1,14 +1,28 @@
-import { createClient } from "@/lib/supabase/server";
-import { getUserEmailsByIds } from "@/lib/supabase/admin";
+import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Building2, Clock, CheckCircle, XCircle, Filter } from "lucide-react";
+import { Calendar, Building2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
-export default async function AdminReservationsPage() {
-  const supabase = await createClient();
+const STATUS_FILTERS = [
+  { value: "all", label: "Todas" },
+  { value: "pending", label: "Pendientes" },
+  { value: "approved", label: "Aprobadas" },
+  { value: "rejected", label: "Rechazadas" },
+  { value: "cancelled", label: "Canceladas" },
+  { value: "no_show", label: "No-show" },
+] as const;
+
+export default async function AdminReservationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  // Service-role: RLS solo deja ver el profile propio. Layout ya validó admin.
+  const supabase = createAdminClient();
+  const { status = "all" } = await searchParams;
 
   // NOTA: `profiles` no tiene columna `email` (vive en auth.users):
   // se resuelve vía Admin API con service-role (solo servidor).
@@ -24,12 +38,17 @@ export default async function AdminReservationsPage() {
     ...r,
     resident_email: emailsByUserId.get(r.user_id as string) || null,
   }));
+  const visible =
+    status === "all"
+      ? reservationsWithEmail
+      : reservationsWithEmail.filter((r) => r.status === status);
 
   const statusConfig = {
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
     approved: { label: "Aprobada", color: "bg-green-100 text-green-800", icon: CheckCircle },
     rejected: { label: "Rechazada", color: "bg-red-100 text-red-800", icon: XCircle },
     cancelled: { label: "Cancelada", color: "bg-gray-100 text-gray-800", icon: XCircle },
+    no_show: { label: "No se presentó", color: "bg-red-100 text-red-800", icon: XCircle },
   } as const;
 
   return (
@@ -39,9 +58,29 @@ export default async function AdminReservationsPage() {
             <h1 className="text-3xl font-bold tracking-tight">Todas las reservas</h1>
             <p className="text-muted-foreground mt-1">Gestiona y filtra todas las reservas del sistema</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline"><Filter className="mr-2 h-4 w-4" /> Filtros</Button>
-            <Button variant="outline">Exportar CSV</Button>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              {STATUS_FILTERS.map((f) => (
+                <a
+                  key={f.value}
+                  href={f.value === "all" ? "/admin/reservations" : `/admin/reservations?status=${f.value}`}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    status === f.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {f.label}
+                </a>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <a href={`/admin/reservations/export${status === "all" ? "" : `?status=${status}`}`} download>
+                  Exportar CSV
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -108,7 +147,7 @@ export default async function AdminReservationsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {reservationsWithEmail?.map((r) => {
+                  {visible?.map((r) => {
                     const config = statusConfig[r.status as keyof typeof statusConfig];
                     const Icon = config?.icon || Calendar;
                     return (
@@ -168,10 +207,10 @@ export default async function AdminReservationsPage() {
                   })}
                 </tbody>
               </table>
-              {reservations?.length === 0 && (
+              {visible?.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No hay reservas aún</p>
+                  <p>{status === "all" ? "No hay reservas aún" : "Sin reservas con ese estado"}</p>
                 </div>
               )}
             </div>
