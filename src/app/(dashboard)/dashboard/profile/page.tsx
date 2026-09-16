@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updateProfile } from "@/app/(auth)/actions";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
@@ -24,6 +25,26 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: { fullName: "", apartment: "", phone: "" },
   });
+
+  // Precarga los datos guardados (lectura propia permitida por RLS).
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, apartment, phone")
+        .eq("id", user.id)
+        .single();
+      if (profile) {
+        form.reset({
+          fullName: profile.full_name || "",
+          apartment: profile.apartment || "",
+          phone: profile.phone || "",
+        });
+      }
+    });
+  }, [form]);
 
   async function onSubmit(data: ProfileInput) {
     setIsLoading(true);
