@@ -73,15 +73,16 @@ availability_schedules (
 ## Funcionalidades MVP (Alcance Mínimo)
 
 ### Fase 1 - Core (Semana 1)
-- [ ] Auth: Login/Register/Magic Link + Perfil
-- [ ] Dashboard residente: Ver áreas, reservar, ver mis reservas
-- [ ] Dashboard admin: Ver todas las reservas, aprobar/rechazar
-- [ ] Validación solapamiento BD (constraint exclusivo)
-- [ ] UI responsive mobile-first
+- [x] Auth: Login/Register/Magic Link + Perfil
+- [x] Dashboard residente: Ver áreas, reservar, ver mis reservas
+- [x] Dashboard admin: Ver todas las reservas, aprobar/rechazar
+- [x] Validación solapamiento BD (constraint exclusivo)
+- [x] UI responsive mobile-first
+- [x] Calendar visual (react-day-picker)
+- [x] Admin: CRUD áreas comunes + horarios
 
 ### Fase 2 - Pulido (Semana 2)
 - [ ] Notificaciones email (Supabase Auth hooks / Resend)
-- [ ] Calendario visual (react-day-picker o similar)
 - [ ] Reglas de negocio: max horas/semana, anticipación mínima
 - [ ] Panel seguridad: check-in/check-out reservas
 
@@ -98,10 +99,11 @@ availability_schedules (
 - ✅ Git 2.55.0
 - ✅ Proyecto Next.js 14 + TypeScript + Tailwind creado
 - ✅ Supabase client/server + middleware auth configurado
-- ✅ shadcn/ui components (button, input, label, card, dialog, select, dropdown, avatar, badge, form)
+- ✅ shadcn/ui components (button, input, label, card, dialog, select, dropdown, avatar, badge, form, calendar, textarea)
 - ✅ Repo GitHub creado: https://github.com/Trizzoth/condominium-reservations (privado)
 - ✅ Git flow configurado: `main` (producción) ← `develop` (integración) ← `feature/*`
 - ✅ **Auth flow COMPLETADO** (Issue #1 merged): login, register, magic link, profile, dashboard, admin panel
+- ✅ **Reservations CRUD COMPLETADO** (Issue #2 merged): calendar visual, admin areas/schedules/users/reservations
 - ✅ Supabase project creado + schema ejecutado
 - ✅ .env.local configurado
 
@@ -117,15 +119,15 @@ availability_schedules (
 8. ✅ **Ejecutar SQL schema** en Supabase SQL Editor → COMPLETADO
 9. ✅ **Crear Issue #1** → COMPLETADO + MERGED
 10. ✅ **Crear rama** `feature/auth-flow` → COMPLETADO + MERGED
+11. ✅ **Crear Issue #2** → COMPLETADO + MERGED
 
 ---
 
-### 🔄 SIGUIENTE: Issue #2 - Reservations CRUD & Calendar
-- [ ] Calendar visual mejorado (react-day-picker)
-- [ ] Admin: CRUD áreas comunes + horarios
-- [ ] Validaciones negocio: max horas/semana, anticipación
-- [ ] Notificaciones email (Resend)
-- [ ] Panel seguridad check-in/out
+### 🔄 SIGUIENTE: Issue #3 - Fase 2: Notifications, Business Rules, Security Panel
+- [ ] Notificaciones email (Resend): confirmación reserva, aprobada/rechazada, recordatorio 24h
+- [ ] Validaciones negocio: max 2 reservas/semana, anticipación 2h/30d, max 4h por reserva
+- [ ] Panel seguridad: check-in/check-out, QR codes, lista hoy
+- [ ] Tests unitarios básicos
 
 ## Credenciales / Secrets (NO COMMITEAR)
 
