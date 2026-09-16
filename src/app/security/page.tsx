@@ -3,6 +3,7 @@ import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Calendar,
   Users,
@@ -13,6 +14,7 @@ import {
   UserX,
   ArrowRight,
   Phone,
+  Search,
 } from "lucide-react";
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -81,10 +83,16 @@ async function markNoShow(formData: FormData) {
   revalidatePath("/security");
 }
 
-export default async function SecurityDashboardPage() {
+export default async function SecurityDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string }>;
+}) {
   // Service-role: RLS impide a security ver reservas ajenas y profiles
   // ajenos. El layout de ruta ya validó el rol.
   const supabase = createAdminClient();
+  const { code = "" } = await searchParams;
+  const query = code.trim().toLowerCase();
 
   const today = new Date();
   const startOfToday = startOfDay(today).toISOString();
@@ -101,10 +109,6 @@ export default async function SecurityDashboardPage() {
     .gte("end_time", startOfToday)
     .order("start_time", { ascending: true });
 
-  const emailsByUserId = await getUserEmailsByIds(
-    (activeReservations || []).map((r) => r.user_id as string),
-  );
-
   // Combine and deduplicate
   const allReservations = [...(activeReservations || [])];
   const seen = new Set<string>();
@@ -113,6 +117,10 @@ export default async function SecurityDashboardPage() {
     seen.add(r.id);
     return true;
   });
+
+  const emailsByUserId = await getUserEmailsByIds(
+    uniqueReservations.map((r) => r.user_id as string),
+  );
 
   const statusConfig = {
     pending_checkin: {
@@ -153,6 +161,13 @@ export default async function SecurityDashboardPage() {
       resident_email: emailsByUserId.get(r.user_id as string) || null,
     };
   });
+
+  // Búsqueda por código (QR/email muestran el id): filtra la lista de hoy.
+  const displayed = query
+    ? reservationsWithStatus.filter((r) =>
+        (r.id as string).toLowerCase().startsWith(query),
+      )
+    : reservationsWithStatus;
 
   const stats = {
     total: reservationsWithStatus.length,
@@ -212,18 +227,44 @@ export default async function SecurityDashboardPage() {
         </Card>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Reservas de hoy</h2>
-        {reservationsWithStatus.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">No hay reservas para hoy</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {reservationsWithStatus.map((r) => {
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">
+            {query ? `Resultado para "${query}"` : "Reservas de hoy"}
+          </h2>
+          <form method="GET" className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                name="code"
+                defaultValue={code}
+                placeholder="Buscar por código de reserva (QR o email)"
+                className="pl-9"
+                minLength={4}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" variant="outline">
+                Buscar
+              </Button>
+              {query && (
+                <Button variant="ghost" asChild>
+                  <a href="/security">Limpiar</a>
+                </Button>
+              )}
+            </div>
+          </form>
+          {displayed.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">
+                  {query ? "Sin coincidencias para ese código" : "No hay reservas para hoy"}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {displayed.map((r) => {
               const statusKey = r.security_status as keyof typeof statusConfig;
               const config = statusConfig[statusKey];
               const Icon = config?.icon || Clock;
@@ -259,6 +300,9 @@ export default async function SecurityDashboardPage() {
                               <Clock className="h-4 w-4" />
                               {format(parseISO(r.start_time), "HH:mm", { locale: es })} -{" "}
                               {format(parseISO(r.end_time), "HH:mm", { locale: es })}
+                            </span>
+                            <span className="text-xs font-mono" title={r.id as string}>
+                              #{(r.id as string).slice(0, 8)}
                             </span>
                           </div>
                         </div>
