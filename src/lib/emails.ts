@@ -8,6 +8,18 @@ interface EmailParams {
   html: string;
 }
 
+/**
+ * Escapa caracteres HTML para prevenir XSS
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, "\"")
+    .replace(/'/g, "&#039;");
+}
+
 export async function sendEmail({ to, subject, html }: EmailParams) {
   if (!process.env.RESEND_API_KEY) {
     console.warn("RESEND_API_KEY not configured, skipping email");
@@ -147,7 +159,7 @@ export function reservationApprovedEmail({
           </table>
           ${adminNotes ? `
             <div style="margin-top: 15px; padding: 12px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981;">
-              <p style="margin: 0; color: #166534; font-size: 14px;"><strong>Nota del administrador:</strong> ${adminNotes}</p>
+              <p style="margin: 0; color: #166534; font-size: 14px;"><strong>Nota del administrador:</strong> ${escapeHtml(adminNotes)}</p>
             </div>
           ` : ""}
         </div>
@@ -216,7 +228,7 @@ export function reservationRejectedEmail({
           </table>
           ${adminNotes ? `
             <div style="margin-top: 15px; padding: 12px; background: #fef2f2; border-radius: 6px; border-left: 3px solid #ef4444;">
-              <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>Motivo:</strong> ${adminNotes}</p>
+              <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>Motivo:</strong> ${escapeHtml(adminNotes)}</p>
             </div>
           ` : ""}
         </div>

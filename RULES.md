@@ -18,6 +18,8 @@
 - **Lint/Format**: ESLint + Prettier + Husky
 - **Deploy**: Vercel
 - **Monitoreo**: Sentry (fase 2)
+- **Testing**: Playwright E2E
+- **Notificaciones**: Resend (email) + Cron (Vercel)
 
 ## Estructura de Carpetas (App Router)
 
@@ -50,11 +52,20 @@ src/
 - **Estilos**: Solo Tailwind, nada de CSS modules/archivos CSS globales salvo `globals.css`
 - **Iconos**: `lucide-react` únicamente
 
+## Reglas de Seguridad (CRÍTICO)
+
+- **RLS Policies**: Nunca consultar `profiles` dentro de policy de `profiles` (recursión infinita). Usar `auth.jwt() ->> 'role'`
+- **UPDATE profiles**: Siempre `WITH CHECK` que valide `role` e `id` no cambien
+- **Server Actions**: Siempre validar rol (`admin`/`security`) antes de mutaciones sensibles
+- **RLS Policies Security**: Necesarias en `profiles`, `reservations`, `schedules` para rol `security`
+- **Rate Limits**: Configurar en Supabase Auth (mínimo 10 emails/hora)
+
 ## Checklist Pre-Merge (Obligatorio)
 
 - [ ] `pnpm typecheck` sin errores
 - [ ] `pnpm lint` sin errores
 - [ ] `pnpm build` compila
+- [ ] `pnpm test` (si aplica) pasa
 - [ ] Probado manual en navegador
 - [ ] Sin `console.log` de debug
 - [ ] PR con descripción clara
@@ -69,6 +80,20 @@ develop (integración)
   ↑ PR feature/xxx→develop (revisión)
 feature/xxx (trabajo individual)
 ```
+
+## Convenciones de Ramas
+
+- `feature/xxx` — Nueva funcionalidad
+- `fix/xxx` — Corrección de bug
+- `chore/xxx` — Tareas de mantenimiento
+- `docs/xxx` — Documentación
+- `refactor/xxx` — Refactoring sin cambio funcional
+
+## Testing
+
+- **Playwright E2E**: Tests críticos (auth, reservas, admin) obligatorios
+- **Unit Tests (Vitest)**: Validaciones Zod, utils, helpers
+- **Coverage mínimo**: 70% en lógica de negocio
 
 ## Prohibido
 

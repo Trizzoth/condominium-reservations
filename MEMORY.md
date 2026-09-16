@@ -17,8 +17,10 @@
 | UI | shadcn/ui + Tailwind | Inicio | David |
 | Package Manager | pnpm | 2026-09-16 | David |
 | Git Flow | main/develop/feature/fix | Inicio | David |
+| Testing | Playwright E2E | 2026-09-16 | David |
+| Notifications | Resend (email) + Cron (Vercel) | 2026-09-16 | David |
 
-## Esquema BD Preliminar (Supabase)
+## Esquema BD Actualizado (Supabase) - Post Migration
 
 ```sql
 -- Perfiles extendidos de usuarios
@@ -27,8 +29,9 @@ profiles (
   full_name text,
   apartment text,
   phone text,
-  role text CHECK (role IN ('resident', 'admin', 'security')),
-  created_at timestamptz DEFAULT now()
+  role text CHECK (role IN ('resident', 'admin', 'security')) DEFAULT 'resident',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 )
 
 -- Áreas comunes reservables
@@ -39,23 +42,26 @@ common_areas (
   capacity integer,
   rules text,
   is_active boolean DEFAULT true,
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
 )
 
--- Reservas
+-- Reservas (CON CONSTRAINT ANTI-SOLAPAMIENTO + check-in/out)
 reservations (
   id uuid PK DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES profiles(id),
   common_area_id uuid REFERENCES common_areas(id),
   start_time timestamptz NOT NULL,
   end_time timestamptz NOT NULL,
-  status text CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled')) DEFAULT 'pending',
+  status text CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled', 'no_show')) DEFAULT 'pending',
   admin_notes text,
+  checked_in_at timestamptz,
+  checked_out_at timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
   CONSTRAINT no_overlap EXCLUDE USING gist (
     common_area_id WITH =,
-    tsrange(start_time, end_time) WITH &&
+    tstzrange(start_time, end_time) WITH &&
   ) WHERE (status IN ('pending', 'approved'))
 )
 
@@ -66,8 +72,25 @@ availability_schedules (
   day_of_week int CHECK (day_of_week BETWEEN 0 AND 6), -- 0=Domingo
   open_time time NOT NULL,
   close_time time NOT NULL,
-  max_duration_hours int DEFAULT 4
+  max_duration_hours int DEFAULT 4,
+  created_at timestamptz DEFAULT now()
 )
+
+-- Trigger handle_new_user (FIXED: guarda apartment, phone, role)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, apartment, phone, role)
+  VALUES (
+    NEW.id, 
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'apartment',
+    NEW.raw_user_meta_data->>'phone',
+    COALESCE(NEW.raw_user_meta_data->>'role', 'resident')
+  );
+  RETURN NEW;
+END;
+$$;
 ```
 
 ## Funcionalidades MVP (Alcance Mínimo)
