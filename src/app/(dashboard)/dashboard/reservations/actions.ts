@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getUserEmailsByIds } from "@/lib/supabase/admin";
 import { z } from "zod";
 import { sendEmail, reservationCreatedEmail, reservationApprovedEmail, reservationRejectedEmail } from "@/lib/emails";
 import { format, parseISO } from "date-fns";
@@ -132,23 +133,23 @@ export async function createReservation(formData: FormData) {
     return { error: { form: [error.message] } };
   }
 
-  // Send confirmation email
+  // Send confirmation email (el email vive en auth.users, no en profiles)
   if (reservation) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, email")
+      .select("full_name")
       .eq("id", user.id)
       .single();
 
-    if (profile?.email) {
+    if (user.email) {
       const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
       const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
       
       await sendEmail({
-        to: profile.email,
+        to: user.email,
         subject: "✅ Reserva recibida - Pendiente de aprobación",
         html: reservationCreatedEmail({
-          userName: profile.full_name || "Residente",
+          userName: profile?.full_name || "Residente",
           areaName: reservation.common_areas?.name || "Área común",
           startTime: `${startFormatted}`,
           endTime: endFormatted,
@@ -174,18 +175,20 @@ export async function approveReservationAction(reservationId: string) {
     .from("reservations")
     .update({ status: "approved", updated_at: new Date().toISOString() })
     .eq("id", reservationId)
-    .select("*, common_areas(name), profiles(full_name, email)")
+    .select("*, common_areas(name), profiles(full_name)")
     .single();
 
   if (error) return { error: error.message };
 
-  // Send approval email
-  if (reservation?.profiles?.email) {
+  // Send approval email (el email vive en auth.users, no en profiles)
+  const emails = await getUserEmailsByIds([reservation.user_id]);
+  const recipientEmail = emails.get(reservation.user_id);
+  if (recipientEmail) {
     const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
     
     await sendEmail({
-      to: reservation.profiles.email,
+      to: recipientEmail,
       subject: "✅ Tu reserva ha sido aprobada",
       html: reservationApprovedEmail({
         userName: reservation.profiles.full_name || "Residente",
@@ -217,18 +220,20 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
       updated_at: new Date().toISOString() 
     })
     .eq("id", reservationId)
-    .select("*, common_areas(name), profiles(full_name, email)")
+    .select("*, common_areas(name), profiles(full_name)")
     .single();
 
   if (error) return { error: error.message };
 
-  // Send rejection email
-  if (reservation?.profiles?.email) {
+  // Send rejection email (el email vive en auth.users, no en profiles)
+  const emails = await getUserEmailsByIds([reservation.user_id]);
+  const recipientEmail = emails.get(reservation.user_id);
+  if (recipientEmail) {
     const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
     
     await sendEmail({
-      to: reservation.profiles.email,
+      to: recipientEmail,
       subject: "❌ Tu reserva ha sido rechazada",
       html: reservationRejectedEmail({
         userName: reservation.profiles.full_name || "Residente",

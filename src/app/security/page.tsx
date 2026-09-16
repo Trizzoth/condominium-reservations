@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getUserEmailsByIds } from "@/lib/supabase/admin";
 import { SecurityLayout } from "@/components/layout/security-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,13 +74,19 @@ export default async function SecurityDashboardPage() {
   const endOfToday = endOfDay(today).toISOString();
 
   // Get all approved reservations for today (including ones that started earlier but haven't ended)
+  // NOTA: `profiles` no tiene columna `email` (vive en auth.users):
+  // se resuelve vía Admin API con service-role (solo servidor).
   const { data: activeReservations } = await supabase
     .from("reservations")
-    .select("*, common_areas(name), profiles(full_name, apartment, email, phone)")
+    .select("*, common_areas(name), profiles(full_name, apartment, phone)")
     .eq("status", "approved")
     .lte("start_time", endOfToday)
     .gte("end_time", startOfToday)
     .order("start_time", { ascending: true });
+
+  const emailsByUserId = await getUserEmailsByIds(
+    (activeReservations || []).map((r) => r.user_id as string)
+  );
 
   // Combine and deduplicate
   const allReservations = [...(activeReservations || [])];
@@ -119,7 +126,11 @@ export default async function SecurityDashboardPage() {
       status = "pending_checkin";
     }
 
-    return { ...r, security_status: status };
+    return {
+      ...r,
+      security_status: status,
+      resident_email: emailsByUserId.get(r.user_id as string) || null,
+    };
   });
 
   const stats = {
@@ -274,7 +285,7 @@ export default async function SecurityDashboardPage() {
                           )}
                         </div>
                       </div>
-                      {(r.profiles?.phone || r.profiles?.email) && (
+                      {(r.profiles?.phone || r.resident_email) && (
                         <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
                           <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                             {r.profiles?.phone && (
@@ -282,8 +293,8 @@ export default async function SecurityDashboardPage() {
                                 <Phone className="h-3 w-3" /> {r.profiles.phone}
                               </span>
                             )}
-                            {r.profiles?.email && (
-                              <span>{r.profiles.email}</span>
+                            {r.resident_email && (
+                              <span>{r.resident_email}</span>
                             )}
                           </div>
                         </div>

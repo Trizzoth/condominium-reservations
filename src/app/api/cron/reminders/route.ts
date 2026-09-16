@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { sendEmail, reservationReminderEmail } from "@/lib/emails";
 import { format, parseISO, addDays, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -30,9 +30,11 @@ export async function GET(request: Request) {
   const startOfTomorrow = startOfDay(tomorrow).toISOString();
   const endOfTomorrow = endOfDay(tomorrow).toISOString();
 
+  // NOTA: `profiles` no tiene columna `email` (vive en auth.users):
+  // se resuelve vía Admin API con service-role (solo servidor).
   const { data: reservations, error } = await supabase
     .from("reservations")
-    .select("*, common_areas(name), profiles(full_name, email)")
+    .select("*, common_areas(name), profiles(full_name)")
     .eq("status", "approved")
     .gte("start_time", startOfTomorrow)
     .lte("start_time", endOfTomorrow);
@@ -49,14 +51,19 @@ export async function GET(request: Request) {
   let sent = 0;
   let failed = 0;
 
+  const emailsByUserId = await getUserEmailsByIds(
+    reservations.map((r) => r.user_id as string)
+  );
+
   for (const reservation of reservations) {
-    if (!reservation.profiles?.email) continue;
+    const recipientEmail = emailsByUserId.get(reservation.user_id as string);
+    if (!recipientEmail) continue;
 
     const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
 
     const result = await sendEmail({
-      to: reservation.profiles.email,
+      to: recipientEmail,
       subject: "⏰ Recordatorio: Tu reserva es mañana",
       html: reservationReminderEmail({
         userName: reservation.profiles.full_name || "Residente",
