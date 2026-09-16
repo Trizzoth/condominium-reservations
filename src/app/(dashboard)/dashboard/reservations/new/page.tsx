@@ -177,6 +177,12 @@ export default function NewReservationPage() {
       return;
     }
 
+    const available = await checkAvailability(selectedDate, selectedStartTime, selectedEndTime);
+    if (!available) {
+      setError("Ese horario ya está reservado. Elige otro.");
+      return;
+    }
+
     setSubmitting(true);
 
     const start = new Date(selectedDate);
@@ -187,20 +193,17 @@ export default function NewReservationPage() {
     const [eh, em] = selectedEndTime.split(":").map(Number);
     end.setHours(eh, em, 0, 0);
 
-    // Call Server Action
-    const formData = new FormData();
-    formData.set("commonAreaId", selectedArea);
-    formData.set("startTime", start.toISOString());
-    formData.set("endTime", end.toISOString());
-
     const response = await fetch("/api/reservations/create", {
       method: "POST",
-      body: formData,
+      body: new URLSearchParams({
+        commonAreaId: selectedArea,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      }),
     });
 
     const result = await response.json();
     setSubmitting(false);
-
     if (result.error) {
       const err = result.error as { form?: string[] };
       setError(err.form?.[0] || "Error al crear reserva");
@@ -298,25 +301,49 @@ export default function NewReservationPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <CalendarComponent
-                  selected={selectedDate}
-                  onSelect={handleDateSelect}
-                  disabledDays={getDisabledDates()}
-                  unavailableDays={getUnavailableDates()}
-                />
-                {selectedDate && (
-                  <p className="mt-3 text-sm text-muted-foreground">
-                    Seleccionado: {format(selectedDate, "EEEE d 'de' MMMM yyyy", { locale: es })}
-                  </p>
+                {!selectedArea ? (
+                  <div className="text-center py-8">
+                    <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                    <p className="text-muted-foreground">Primero selecciona un área para ver disponibilidad</p>
+                  </div>
+                ) : loading ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                    <p className="mt-3 text-muted-foreground">Cargando horarios...</p>
+                  </div>
+                ) : Object.keys(schedules).length === 0 ? (
+                  <div className="text-center py-8">
+                    <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                    <p className="text-muted-foreground">No hay horarios configurados para esta área</p>
+                    <p className="text-xs text-muted-foreground mt-1">Contacta al administrador</p>
+                  </div>
+                ) : (
+                  <>
+                    <CalendarComponent
+                      selected={selectedDate}
+                      onSelect={handleDateSelect}
+                      disabledDays={getDisabledDates()}
+                      unavailableDays={getUnavailableDates()}
+                      disableUnavailable={true}
+                    />
+                    {selectedDate && (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        Seleccionado: {format(selectedDate, "EEEE d 'de' MMMM yyyy", { locale: es })}
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-muted-foreground flex items-center justify-center gap-1">
+                      <span className="w-3 h-3 rounded-full bg-destructive/10 border border-destructive/20" />
+                      <span>Sin horario</span>
+                      <span className="w-3 h-3 rounded-full text-muted-foreground/30" />
+                      <span>Pasado</span>
+                    </p>
+                  </>
                 )}
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Días en rojo = sin horario configurado · Días grises = pasados
-                </p>
               </CardContent>
             </Card>
 
             {/* Step 3: Select Time */}
-            {selectedArea && selectedDate && schedules[selectedDate.getDay()] && (
+            {selectedArea && selectedDate && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -325,54 +352,69 @@ export default function NewReservationPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Hora inicio</Label>
-                      <Select value={selectedStartTime} onValueChange={setSelectedStartTime}>
-                        <SelectTrigger className="w-full mt-1">
-                          <SelectValue placeholder="Hora inicio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timeSlots.map((slot) => (
-                            <SelectItem key={slot.time} value={slot.time} disabled={!slot.available}>
-                              {slot.time}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {!schedules[selectedDate.getDay()] ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Este día no tiene horario configurado</p>
+                      <p className="text-sm mt-1">Selecciona otro día</p>
                     </div>
-                    <div>
-                      <Label>Hora fin</Label>
-                      <Select value={selectedEndTime} onValueChange={setSelectedEndTime}>
-                        <SelectTrigger className="w-full mt-1">
-                          <SelectValue placeholder="Hora fin" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timeSlots
-                            .filter((slot) => slot.time > selectedStartTime)
-                            .map((slot) => (
-                              <SelectItem key={slot.time} value={slot.time} disabled={!slot.available}>
-                                {slot.time}
-                              </SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
+                  ) : timeSlots.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No hay horarios disponibles para este día</p>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Hora inicio</Label>
+                          <Select value={selectedStartTime} onValueChange={setSelectedStartTime}>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="Hora inicio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeSlots.map((slot) => (
+                                <SelectItem key={slot.time} value={slot.time} disabled={!slot.available}>
+                                  {slot.time}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Hora fin</Label>
+                          <Select value={selectedEndTime} onValueChange={setSelectedEndTime}>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="Hora fin" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {timeSlots
+                                .filter((slot) => slot.time > selectedStartTime)
+                                .map((slot) => (
+                                  <SelectItem key={slot.time} value={slot.time} disabled={!slot.available}>
+                                    {slot.time}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
 
-                  {selectedStartTime && selectedEndTime && (
-                    <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                      <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
-                      <p className="text-muted-foreground">
-                        Máx. {schedules[selectedDate.getDay()]?.maxDuration || 4} horas
-                      </p>
-                      {checkingAvailability && (
-                        <p className="text-primary mt-1 flex items-center gap-1">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Verificando disponibilidad...
-                        </p>
+                      {selectedStartTime && selectedEndTime && (
+                        <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
+                          <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
+                          <p className="text-muted-foreground">
+                            Máx. {schedules[selectedDate.getDay()]?.maxDuration || 4} horas
+                          </p>
+                          {checkingAvailability && (
+                            <p className="text-primary mt-1 flex items-center gap-1">
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                              Verificando disponibilidad...
+                            </p>
+                          )}
+                        </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </CardContent>
               </Card>

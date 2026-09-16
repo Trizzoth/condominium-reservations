@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('MVP Reservas Condominio - Páginas principales', () => {
   test('Login page carga correctamente', async ({ page }) => {
     await page.goto('http://localhost:3000/login');
-    await expect(page.locator('h2:has-text("Iniciar sesión")')).toBeVisible();
+    await expect(page.locator('h1:has-text("Bienvenido")')).toBeVisible();
     await expect(page.locator('button:has-text("Iniciar sesión")')).toBeVisible();
     await expect(page.locator('button:has-text("Enviar enlace mágico")')).toBeVisible();
   });
