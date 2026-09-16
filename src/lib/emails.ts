@@ -1,9 +1,36 @@
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 interface EmailParams {
   to: string;
   subject: string;
   html: string;
+}
+
+export type EmailProvider = "smtp" | "resend" | "none";
+
+/**
+ * Proveedor activo. SMTP (ej. Gmail gratis) gana si está configurado,
+ * porque Resend sin dominio verificado solo entrega al dueño de la cuenta.
+ * Sin ninguno, los envíos se omiten con error controlado (no tumban nada).
+ */
+export function getEmailProvider(): EmailProvider {
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    return "smtp";
+  }
+  if (process.env.RESEND_API_KEY) {
+    return "resend";
+  }
+  return "none";
+}
+
+/** Remitente según proveedor (dominio verificado o Gmail real). */
+export function getEmailFrom(): string {
+  if (getEmailProvider() === "smtp") {
+    const addr = process.env.SMTP_FROM || process.env.SMTP_USER || "";
+    return `Reservas Condominio <${addr}>`;
+  }
+  return process.env.RESEND_FROM_EMAIL || "Reservas Condominio <onboarding@resend.dev>";
 }
 
 /**
@@ -21,18 +48,40 @@ export function escapeHtml(text: string): string {
 }
 
 export async function sendEmail({ to, subject, html }: EmailParams) {
-  // Cliente perezoso: `new Resend()` sin API key LANZA al evaluar el módulo
-  // y rompía `next build` en entornos sin la key (ej. Preview de Vercel).
+  const provider = getEmailProvider();
+
+  if (provider === "none") {
+    // Cliente perezoso a propósito: construir clientes sin credenciales
+    // LANZA al evaluar el módulo y rompía `next build` (ej. Preview).
+    console.warn("Email not configured (SMTP_* ni RESEND_API_KEY), skipping email");
+    return { success: false, error: "Email service not configured" };
+  }
+
+  if (provider === "smtp") {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 465),
+        secure: process.env.SMTP_SECURE !== "false",
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+      const info = await transporter.sendMail({ from: getEmailFrom(), to, subject, html });
+      return { success: true, data: { id: info.messageId } };
+    } catch (err) {
+      console.error("SMTP send failed:", err);
+      return { success: false, error: "Failed to send email" };
+    }
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn("RESEND_API_KEY not configured, skipping email");
     return { success: false, error: "Email service not configured" };
   }
   const resend = new Resend(apiKey);
 
   try {
     const { data, error } = await resend.emails.send({
-      from: "Reservas Condominio <noreply@tudominio.com>",
+      from: getEmailFrom(),
       to,
       subject,
       html,
