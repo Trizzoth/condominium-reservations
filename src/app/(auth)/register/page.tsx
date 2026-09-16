@@ -67,109 +67,107 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {message && (
-              <div
-                className={`p-3 rounded-md text-sm ${
-                  message.type === "success"
-                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                }`}
-              >
-                {message.text}
-              </div>
-            )}
+        <Form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {message && (
+            <div
+              className={`p-3 rounded-md text-sm ${
+                message.type === "success"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                  : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
 
-            <FormItem>
-              <FormLabel>Nombre completo</FormLabel>
-              <FormControl>
-                <Controller
-                  name="fullName"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input placeholder="Juan Pérez" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          <FormItem>
+            <FormLabel>Nombre completo</FormLabel>
+            <FormControl>
+              <Controller
+                name="fullName"
+                control={form.control}
+                render={({ field }) => (
+                  <Input placeholder="Juan Pérez" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
 
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Controller
-                  name="email"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input type="email" placeholder="tu@email.com" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          <FormItem>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field }) => (
+                  <Input type="email" placeholder="tu@email.com" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
 
-            <FormItem>
-              <FormLabel>Contraseña</FormLabel>
-              <FormControl>
-                <Controller
-                  name="password"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input type="password" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormDescription>Mínimo 6 caracteres</FormDescription>
-              <FormMessage />
-            </FormItem>
+          <FormItem>
+            <FormLabel>Contraseña</FormLabel>
+            <FormControl>
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field }) => (
+                  <Input type="password" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormDescription>Mínimo 6 caracteres</FormDescription>
+            <FormMessage />
+          </FormItem>
 
-            <FormItem>
-              <FormLabel>Confirmar contraseña</FormLabel>
-              <FormControl>
-                <Controller
-                  name="confirmPassword"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input type="password" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          <FormItem>
+            <FormLabel>Confirmar contraseña</FormLabel>
+            <FormControl>
+              <Controller
+                name="confirmPassword"
+                control={form.control}
+                render={({ field }) => (
+                  <Input type="password" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
 
-            <FormItem>
-              <FormLabel>Apartamento / Casa (opcional)</FormLabel>
-              <FormControl>
-                <Controller
-                  name="apartment"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input placeholder="Ej: 101, Casa 5, Torre B - 302" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          <FormItem>
+            <FormLabel>Apartamento / Casa (opcional)</FormLabel>
+            <FormControl>
+              <Controller
+                name="apartment"
+                control={form.control}
+                render={({ field }) => (
+                  <Input placeholder="Ej: 101, Casa 5, Torre B - 302" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
 
-            <FormItem>
-              <FormLabel>Teléfono (opcional)</FormLabel>
-              <FormControl>
-                <Controller
-                  name="phone"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input type="tel" placeholder="+57 300 123 4567" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          <FormItem>
+            <FormLabel>Teléfono (opcional)</FormLabel>
+            <FormControl>
+              <Controller
+                name="phone"
+                control={form.control}
+                render={({ field }) => (
+                  <Input type="tel" placeholder="+57 300 123 4567" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Registrando..." : "Crear cuenta"}
-            </Button>
-          </form>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Registrando..." : "Crear cuenta"}
+          </Button>
         </Form>
       </div>
     </div>

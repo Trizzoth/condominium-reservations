@@ -86,64 +86,62 @@ function LoginForm() {
           </p>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {message && (
-              <div
-                className={`p-3 rounded-md text-sm ${
-                  message.type === "success"
-                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                    : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                }`}
+        <Form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {message && (
+            <div
+              className={`p-3 rounded-md text-sm ${
+                message.type === "success"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                  : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+              }`}
+            >
+              {message.text}
+            </div>
+          )}
+
+          <FormItem>
+            <FormLabel>Email</FormLabel>
+            <FormControl>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field }) => (
+                  <Input
+                    type="email"
+                    placeholder="tu@email.com"
+                    {...field}
+                  />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+
+          <FormItem>
+            <div className="flex items-center justify-between">
+              <FormLabel>Contraseña</FormLabel>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-primary hover:underline"
               >
-                {message.text}
-              </div>
-            )}
+                ¿Olvidaste la contraseña?
+              </Link>
+            </div>
+            <FormControl>
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field }) => (
+                  <Input type="password" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
 
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Controller
-                  name="email"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input
-                      type="email"
-                      placeholder="tu@email.com"
-                      {...field}
-                    />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-
-            <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>Contraseña</FormLabel>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  ¿Olvidaste la contraseña?
-                </Link>
-              </div>
-              <FormControl>
-                <Controller
-                  name="password"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input type="password" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Entrando..." : "Iniciar sesión"}
-            </Button>
-          </form>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Entrando..." : "Iniciar sesión"}
+          </Button>
         </Form>
 
         <div className="relative">
@@ -157,25 +155,23 @@ function LoginForm() {
           </div>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={onMagicLink} className="space-y-6">
-            <FormItem>
-              <FormLabel>Email para enlace mágico</FormLabel>
-              <FormControl>
-                <Controller
-                  name="email"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Input type="email" placeholder="tu@email.com" {...field} />
-                  )}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-            <Button type="submit" variant="outline" className="w-full" disabled={isLoading}>
-              {isLoading ? "Enviando..." : "Enviar enlace mágico"}
-            </Button>
-          </form>
+        <Form onSubmit={onMagicLink} className="space-y-6">
+          <FormItem>
+            <FormLabel>Email para enlace mágico</FormLabel>
+            <FormControl>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field }) => (
+                  <Input type="email" placeholder="tu@email.com" {...field} />
+                )}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+          <Button type="submit" variant="outline" className="w-full" disabled={isLoading}>
+            {isLoading ? "Enviando..." : "Enviar enlace mágico"}
+          </Button>
         </Form>
       </div>
     </div>

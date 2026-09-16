@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { AdminLayout } from "@/components/layout/admin-layout";
+import { SecurityLayout } from "@/components/layout/security-layout";
 
-export default async function AdminLayoutWrapper({ children }: { children: React.ReactNode }) {
+export default async function SecurityLayoutWrapper({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -10,7 +10,7 @@ export default async function AdminLayoutWrapper({ children }: { children: React
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
 
-  if (profile?.role !== "admin") redirect("/dashboard");
+  if (profile?.role !== "security") redirect("/dashboard");
 
-  return <AdminLayout>{children}</AdminLayout>;
+  return <SecurityLayout>{children}</SecurityLayout>;
 }

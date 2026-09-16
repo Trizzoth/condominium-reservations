@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:open": "next dev & sleep 3 && xdg-open http://localhost:3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -22,8 +23,10 @@
     "lucide-react": "^1.46.0",
     "next": "16.3.5",
     "react": "19.2.8",
+    "react-day-picker": "^10.0.1",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.88.0",
+    "resend": "^6.28.0",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5"
   },

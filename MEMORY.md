@@ -73,22 +73,24 @@ availability_schedules (
 ## Funcionalidades MVP (Alcance Mínimo)
 
 ### Fase 1 - Core (Semana 1)
-- [ ] Auth: Login/Register/Magic Link + Perfil
-- [ ] Dashboard residente: Ver áreas, reservar, ver mis reservas
-- [ ] Dashboard admin: Ver todas las reservas, aprobar/rechazar
-- [ ] Validación solapamiento BD (constraint exclusivo)
-- [ ] UI responsive mobile-first
+- [x] Auth: Login/Register/Magic Link + Perfil
+- [x] Dashboard residente: Ver áreas, reservar, ver mis reservas
+- [x] Dashboard admin: Ver todas las reservas, aprobar/rechazar
+- [x] Validación solapamiento BD (constraint exclusivo)
+- [x] UI responsive mobile-first
+- [x] Calendar visual (react-day-picker)
+- [x] Admin: CRUD áreas comunes + horarios
 
 ### Fase 2 - Pulido (Semana 2)
-- [ ] Notificaciones email (Supabase Auth hooks / Resend)
-- [ ] Calendario visual (react-day-picker o similar)
-- [ ] Reglas de negocio: max horas/semana, anticipación mínima
-- [ ] Panel seguridad: check-in/check-out reservas
+- [x] Notificaciones email (Resend): confirmación reserva, aprobada/rechazada, recordatorio 24h (cron)
+- [x] Reglas de negocio: max 2 reservas/semana, anticipación 2h/30d, max 4h por reserva (configurable por área)
+- [x] Panel seguridad: check-in/check-out, lista hoy, estados (pendiente/dentro/salió/no-show)
 
 ### Fase 3 - Nice to Have
 - [ ] PWA / offline básico
 - [ ] Sentry monitoring
 - [ ] Tests E2E (Playwright)
+- [ ] QR codes en emails para check-in rápido
 
 ## Estado Actual (2026-09-16)
 
@@ -98,11 +100,14 @@ availability_schedules (
 - ✅ Git 2.55.0
 - ✅ Proyecto Next.js 14 + TypeScript + Tailwind creado
 - ✅ Supabase client/server + middleware auth configurado
-- ✅ shadcn/ui components (button, input, label, card, dialog, select, form)
-- ✅ Repo GitHub creado: https://github.com/Trizzoth/miproyecto-reservas (privado)
+- ✅ shadcn/ui components (button, input, label, card, dialog, select, dropdown, avatar, badge, form, calendar, textarea)
+- ✅ Repo GitHub creado: https://github.com/Trizzoth/condominium-reservations (privado)
 - ✅ Git flow configurado: `main` (producción) ← `develop` (integración) ← `feature/*`
-- ⏳ Supabase project: **PENDIENTE CREAR**
-- ⏳ .env.local con credenciales: **PENDIENTE**
+- ✅ **Auth flow COMPLETADO** (Issue #1 merged): login, register, magic link, profile, dashboard, admin panel
+- ✅ **Reservations CRUD COMPLETADO** (Issue #2 merged): calendar visual, admin areas/schedules/users/reservations
+- ✅ **Phase 2 COMPLETADO** (Issue #3 merged): Resend emails, business validations, security panel
+- ✅ Supabase project creado + schema ejecutado + migration_security.sql
+- ✅ .env.local configurado (incluye RESEND_API_KEY)
 
 ## Próximos Pasos Inmediatos
 
@@ -111,11 +116,22 @@ availability_schedules (
 3. ✅ shadcn/ui + componentes base - COMPLETADO
 4. ✅ Supabase client/server + middleware - COMPLETADO
 5. ✅ Repo GitHub + git flow - COMPLETADO
-6. 🔄 **Crear proyecto Supabase** → copiar URL + anon key + service role key
-7. 🔄 **Crear `.env.local`** con credenciales Supabase
-8. 🔄 **Ejecutar SQL schema** en Supabase SQL Editor (ver MEMORY.md líneas 23-70)
-9. 🔄 **Crear Issue #1** en GitHub: "feat: Auth flow (login/register/magic link + perfil)"
-10. 🔄 **Crear rama** `feature/auth-flow` desde `develop`
+6. ✅ **Crear proyecto Supabase** → COMPLETADO
+7. ✅ **Crear `.env.local`** con credenciales Supabase → COMPLETADO
+8. ✅ **Ejecutar SQL schema** en Supabase SQL Editor → COMPLETADO
+9. ✅ **Crear Issue #1** → COMPLETADO + MERGED
+10. ✅ **Crear rama** `feature/auth-flow` → COMPLETADO + MERGED
+11. ✅ **Crear Issue #2** → COMPLETADO + MERGED
+12. ✅ **Crear Issue #3** → COMPLETADO + MERGED
+
+---
+
+### 🔄 SIGUIENTE: Issue #4 - Fase 3: Nice to Have
+- [ ] PWA / offline básico (service worker, manifest)
+- [ ] Sentry monitoring (error tracking)
+- [ ] Tests E2E (Playwright): auth flow, reservas, admin
+- [ ] QR codes en emails de confirmación para check-in rápido
+- [ ] Tests unitarios (Vitest): validaciones, utils
 
 ## Credenciales / Secrets (NO COMMITEAR)
 
