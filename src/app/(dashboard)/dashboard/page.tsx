@@ -16,8 +16,7 @@ export default async function DashboardPage() {
     .from("reservations")
     .select("*, common_areas(name)")
     .eq("user_id", user.id)
-    .order("start_time", { ascending: false })
-    .limit(5);
+    .order("start_time", { ascending: false });
   const { data: areas } = await supabase
     .from("common_areas")
     .select("*")
@@ -27,7 +26,7 @@ export default async function DashboardPage() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Bienvenido, {profile?.full_name || user.email}</h1>
-          <p className="text-muted-foreground mt-1">Apartment {profile?.apartment || "No asignado"}</p>
+          <p className="text-muted-foreground mt-1">Apartamento · {profile?.apartment || "Sin asignar"}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

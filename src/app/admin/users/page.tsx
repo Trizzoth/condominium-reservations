@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +7,19 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 export default async function AdminUsersPage() {
-  const supabase = await createClient();
+  // Service-role: RLS solo deja ver el profile propio. Layout ya validó admin.
+  const supabase = createAdminClient();
 
   const { data: profiles } = await supabase
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false });
+
+  const emailsByUserId = await getUserEmailsByIds((profiles || []).map((p) => p.id as string));
+  const profilesWithEmail = (profiles || []).map((p) => ({
+    ...p,
+    email: emailsByUserId.get(p.id as string) || null,
+  }));
 
   const roleConfig = {
     resident: { label: "Residente", color: "bg-blue-100 text-blue-800", icon: User },
@@ -85,15 +92,17 @@ export default async function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {profiles?.map((p) => {
+                  {profilesWithEmail?.map((p) => {
                     const config = roleConfig[p.role as keyof typeof roleConfig];
                     const Icon = config?.icon || User;
                     return (
                       <tr key={p.id} className="hover:bg-muted/50">
                         <td className="py-4 px-4">
                           <div>
-                            <p className="font-medium">{p.full_name || "Sin nombre"}</p>
-                            <p className="text-xs text-muted-foreground">{p.id.slice(0, 8)}...</p>
+                            <p className="font-medium">{p.full_name || p.email || "Sin nombre"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {p.full_name && p.email ? p.email : `${p.id.slice(0, 8)}...`}
+                            </p>
                           </div>
                         </td>
                         <td className="py-4 px-4">

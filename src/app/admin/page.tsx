@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { getUserEmailsByIds } from "@/lib/supabase/admin";
+import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +7,9 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 export default async function AdminPage() {
-  const supabase = await createClient();
+  // Lecturas con service-role: RLS solo deja ver el profile propio y
+  // security no ve reservas ajenas. El layout de ruta ya validó rol admin.
+  const supabase = createAdminClient();
 
   // NOTA: `profiles` no tiene columna `email` (vive en auth.users):
   // se resuelve vía Admin API con service-role (solo servidor).
