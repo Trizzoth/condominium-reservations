@@ -37,7 +37,7 @@ export default async function AdminPage() {
 
   return (
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Panel de administración</h1>
             <p className="text-muted-foreground mt-1">Gestiona reservas, áreas y usuarios</p>

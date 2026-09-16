@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,21 +50,32 @@ export default function AdminAreasPage() {
     is_active: true,
   };
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabase = useMemo(
+    () =>
+      createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ),
+    []
   );
 
-  const fetchAreas = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
+  // Los setState viven en callbacks de promesa (no en el cuerpo síncrono
+  // del efecto): evita renders en cascada.
+  const fetchAreas = useCallback(() => {
+    supabase
       .from("common_areas")
       .select("*")
-      .order("created_at", { ascending: false });
-    if (error) setError(error.message);
-    else setAreas(data || []);
-    setLoading(false);
-  };
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (error) setError(error.message);
+        else setAreas(data || []);
+        setLoading(false);
+      });
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchAreas();
+  }, [fetchAreas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +161,7 @@ export default function AdminAreasPage() {
 
   return (
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Gestión de áreas comunes</h1>
             <p className="text-muted-foreground mt-1">Crea y configura áreas reservables</p>
