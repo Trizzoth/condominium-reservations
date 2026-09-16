@@ -30,9 +30,14 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
   }
   const resend = new Resend(apiKey);
 
+  // El dominio debe estar verificado en Resend. Sin RESEND_FROM_EMAIL se usa
+  // la dirección de pruebas (solo entrega al dueño de la cuenta Resend).
+  const from =
+    process.env.RESEND_FROM_EMAIL || "Reservas Condominio <onboarding@resend.dev>";
+
   try {
     const { data, error } = await resend.emails.send({
-      from: "Reservas Condominio <noreply@tudominio.com>",
+      from,
       to,
       subject,
       html,

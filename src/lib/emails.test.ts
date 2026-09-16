@@ -1,4 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
+
+const sendMock = vi.fn();
+vi.mock("resend", () => ({
+  Resend: class {
+    emails = { send: sendMock };
+  },
+}));
+
+import { sendEmail } from "./emails";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  sendMock.mockReset();
+  sendMock.mockResolvedValue({ data: { id: "test-id" }, error: null });
+});
 import { escapeHtml, reservationApprovedEmail, reservationCreatedEmail } from "./emails";
 
 describe("escapeHtml", () => {
@@ -35,5 +50,29 @@ describe("templates", () => {
     });
     expect(html).not.toContain("<b>Ana</b>");
     expect(html).toContain("&lt;b&gt;Ana&lt;/b&gt;");
+  });
+});
+
+describe("sendEmail remitente", () => {
+  it("usa RESEND_FROM_EMAIL cuando está configurado", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    vi.stubEnv("RESEND_FROM_EMAIL", "Condominio <hola@midominio.com>");
+    await sendEmail({ to: "a@b.com", subject: "s", html: "<p>h</p>" });
+    expect(sendMock).toHaveBeenCalledOnce();
+    expect(sendMock.mock.calls[0][0].from).toBe("Condominio <hola@midominio.com>");
+  });
+
+  it("cae a onboarding@resend.dev sin RESEND_FROM_EMAIL", async () => {
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    vi.stubEnv("RESEND_FROM_EMAIL", "");
+    await sendEmail({ to: "a@b.com", subject: "s", html: "<p>h</p>" });
+    expect(sendMock.mock.calls[0][0].from).toContain("onboarding@resend.dev");
+  });
+
+  it("sin API key no intenta enviar y retorna error controlado", async () => {
+    vi.stubEnv("RESEND_API_KEY", "");
+    const result = await sendEmail({ to: "a@b.com", subject: "s", html: "<p>h</p>" });
+    expect(sendMock).not.toHaveBeenCalled();
+    expect(result.success).toBe(false);
   });
 });
