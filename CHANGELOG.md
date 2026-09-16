@@ -58,6 +58,12 @@
 | **XSS en admin_notes emails** | 🔴 Crítico | `escapeHtml()` en email templates | ✅ Solucionado |
 | Rate limit emails (2/h) | 🟡 Medio | Config manual: 10/hora | ⚠️ Pendiente manual |
 
+### 🐛 Bugs Corregidos (2026-09-16, commit `3ed208a`)
+| Bug | Fix |
+|-----|-----|
+| Calendario no respondía al click (override de `Day` eliminaba el `onClick` interno de DayPicker) | Override de `DayButton` en su lugar; verificado con test E2E `calendar-click.spec.ts` |
+| Register con UI vieja gris | Rediseño con el tema nuevo (iconos, cards, grid 2 col) |
+
 ### 🐛 Bugs Conocidos / Pendientes
 
 | Bug | Severidad | Estado | Comentario |
