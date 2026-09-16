@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MVP Reservas Condominio
 
-## Getting Started
+Sistema de reservas de áreas comunes para condominios. Mobile-first, multi-usuario (residentes, admins, seguridad).
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 14** (App Router, Server Components)
+- **TypeScript** (strict mode)
+- **Tailwind CSS** + **shadcn/ui**
+- **Supabase** (PostgreSQL + Auth + Realtime)
+- **React Hook Form** + **Zod** (validación)
+- **pnpm** (package manager)
+
+## Estructura del proyecto
+
+```
+src/
+├── app/                    # Rutas Next.js (App Router)
+│   ├── (auth)/            # Login, Register, Callback (públicas)
+│   ├── (dashboard)/       # Rutas protegidas (residente)
+│   ├── admin/             # Panel admin (protegido)
+│   ├── api/               # Server Actions
+│   └── layout.tsx         # Layout raíz + providers
+├── components/
+│   ├── ui/                # shadcn/ui (Button, Input, Card, Dialog, etc.)
+│   ├── forms/             # Formularios reutilizables (FormField, FormInput...)
+│   └── layout/            # Header, Sidebar, etc.
+├── lib/
+│   ├── supabase/          # Cliente Supabase (server.ts, client.ts)
+│   ├── utils.ts           # Utilidades (cn = clsx + tailwind-merge)
+│   └── validations/       # Esquemas Zod
+├── hooks/                 # Custom hooks (useAuth, useReservations...)
+├── types/                 # Tipos TypeScript globales
+└── middleware.ts          # Auth middleware (protege /dashboard, /admin)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev        # Desarrollo (localhost:3000)
+pnpm build      # Compilar producción
+pnpm start      # Servidor producción
+pnpm lint       # ESLint
+pnpm typecheck  # TypeScript check (tsc --noEmit)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Variables de entorno
 
-## Learn More
+Crear `.env.local` en la raíz:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+# Supabase (obtener en Dashboard → Settings → API)
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # Solo server
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Base de datos (Supabase SQL Editor)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Ejecutar el schema en `MEMORY.md` (líneas 23-70). Incluye:
+- `profiles` - Extiende `auth.users`
+- `common_areas` - Áreas reservables
+- `reservations` - Reservas con constraint anti-solapamiento
+- `availability_schedules` - Horarios por área/día
 
-## Deploy on Vercel
+## Flujo de trabajo (Git)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+main (producción, deploy Vercel)
+  ↑ PR develop→main
+develop (integración)
+  ↑ PR feature/*→develop
+feature/xxx (trabajo individual)
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Commits: `feat:`, `fix:`, `style:`, `docs:`, `chore:`
+- PR requiere 1 aprobación mínima
+- Nunca push directo a `main` ni `develop`
+
+## Despliegue
+
+1. Push a `main` → Vercel deploya automático
+2. Variables de entorno en Vercel Dashboard
+3. Preview deployments en cada PR
+
+## Próximos pasos (Issues)
+
+Ver [GitHub Issues](https://github.com/Trizzoth/miproyecto-reservas/issues)

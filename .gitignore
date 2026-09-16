@@ -39,3 +39,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Project docs (internal, not for repo)
+*.pdf
+guia-onboarding-mvp.md
+IDEA_PRINCIPAL.md
+MEMORY.md
+RULES.md
+AGENTS.md
+CLAUDE.md
+
+# pnpm
+pnpm-workspace.yaml
