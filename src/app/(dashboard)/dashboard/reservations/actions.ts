@@ -297,23 +297,3 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
 
   return { success: "Reserva rechazada" };
 }
-
-export async function cancelReservationAction(reservationId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { error: "No autenticado" };
-
-  const { error } = await supabase
-    .from("reservations")
-    .update({ status: "cancelled", updated_at: new Date().toISOString() })
-    .eq("id", reservationId)
-    .eq("user_id", user.id)
-    .eq("status", "pending");
-
-  if (error) return { error: error.message };
-
-  return { success: "Reserva cancelada" };
-}
