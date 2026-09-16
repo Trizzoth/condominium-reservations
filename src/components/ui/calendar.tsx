@@ -41,14 +41,18 @@ export function Calendar({
       disabled={disabled}
       classNames={{
         root: cn("p-2", className),
+        months: "flex flex-col gap-4",
         month: "space-y-2",
         month_caption: "flex items-center justify-between",
         nav: "flex items-center gap-1",
         button_previous: "p-1 rounded hover:bg-accent transition-colors",
         button_next: "p-1 rounded hover:bg-accent transition-colors",
+        month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday: "text-xs font-medium text-muted-foreground w-10 text-center",
         week_number: "text-xs text-muted-foreground w-10 text-center",
+        weeks: "",
+        week: "flex w-full mt-1",
         day: "relative flex h-10 w-10 items-center justify-center text-sm font-medium rounded-full",
         day_button: "h-full w-full rounded-full hover:bg-accent focus:bg-accent focus:outline-none transition-colors",
         selected: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft",
