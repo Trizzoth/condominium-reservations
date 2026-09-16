@@ -167,20 +167,28 @@ export function reservationApprovedEmail({
               </td>
             </tr>
           </table>
-          ${adminNotes ? `
+          ${
+            adminNotes
+              ? `
             <div style="margin-top: 15px; padding: 12px; background: #f0fdf4; border-radius: 6px; border-left: 3px solid #10b981;">
               <p style="margin: 0; color: #166534; font-size: 14px;"><strong>Nota del administrador:</strong> ${escapeHtml(adminNotes)}</p>
             </div>
-          ` : ""}
+          `
+              : ""
+          }
         </div>
 
         <p style="color: #6b7280; font-size: 14px;">Presenta este correo (o el código QR en la app) al llegar al área común para el check-in.</p>
-        ${qrCodeDataUrl ? `
+        ${
+          qrCodeDataUrl
+            ? `
           <div style="text-align: center; margin: 20px 0;">
             <img src="${qrCodeDataUrl}" alt="QR de check-in" width="160" height="160" style="border-radius: 8px; border: 1px solid #e5e7eb;" />
             <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Muestra este código en seguridad</p>
           </div>
-        ` : ""}
+        `
+            : ""
+        }
         
         <div style="text-align: center; margin-top: 30px;">
           <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/reservations" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
@@ -244,11 +252,15 @@ export function reservationRejectedEmail({
               </td>
             </tr>
           </table>
-          ${adminNotes ? `
+          ${
+            adminNotes
+              ? `
             <div style="margin-top: 15px; padding: 12px; background: #fef2f2; border-radius: 6px; border-left: 3px solid #ef4444;">
               <p style="margin: 0; color: #991b1b; font-size: 14px;"><strong>Motivo:</strong> ${escapeHtml(adminNotes)}</p>
             </div>
-          ` : ""}
+          `
+              : ""
+          }
         </div>
 
         <p style="color: #6b7280; font-size: 14px;">Puedes intentar reservar en otro horario o contactar al administrador para más información.</p>

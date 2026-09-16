@@ -4,10 +4,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 /** Descarga las reservas en CSV (respeta ?status=). Solo admin. */
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return new Response("No autenticado", { status: 401 });
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
   if (profile?.role !== "admin") return new Response("No autorizado", { status: 403 });
 
   const { searchParams } = new URL(request.url);
@@ -24,7 +30,9 @@ export async function GET(request: Request) {
   if (error) return new Response(error.message, { status: 500 });
 
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const rows: string[][] = [["id", "residente", "apartamento", "area", "inicio", "fin", "estado", "creada"]];
+  const rows: string[][] = [
+    ["id", "residente", "apartamento", "area", "inicio", "fin", "estado", "creada"],
+  ];
   for (const r of data || []) {
     rows.push([
       r.id,

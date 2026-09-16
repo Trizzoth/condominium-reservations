@@ -21,7 +21,7 @@ function allowedPrefixes(role: string | null | undefined): string[] {
  */
 export function resolvePostLoginRedirect(
   role: string | null | undefined,
-  next: string | null | undefined
+  next: string | null | undefined,
 ): string {
   const home = homeForRole(role);
   if (!next || !next.startsWith("/") || next.startsWith("//")) return home;

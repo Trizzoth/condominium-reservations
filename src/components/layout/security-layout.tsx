@@ -26,18 +26,22 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
 
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
     };
 
     getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -48,7 +52,7 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
     await supabase.auth.signOut();
     router.push("/login");
@@ -65,9 +69,7 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
 
   // Solo rutas que existen: el panel de hoy es el check-in.
   // (Historial/Check-in separados van en Fase 3.)
-  const navItems = [
-    { href: "/security", label: "Hoy", icon: LayoutDashboard },
-  ];
+  const navItems = [{ href: "/security", label: "Hoy", icon: LayoutDashboard }];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -76,7 +78,10 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2 md:gap-8">
               <MobileNav items={navItems} currentPath={pathname} />
-              <Link href="/security" className="text-xl font-bold text-primary flex items-center gap-2">
+              <Link
+                href="/security"
+                className="text-xl font-bold text-primary flex items-center gap-2"
+              >
                 <Shield className="h-6 w-6" />
                 Seguridad · Condominio
               </Link>
@@ -92,7 +97,7 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
                         "flex items-center gap-2 text-sm font-medium transition-colors",
                         isActive
                           ? "text-primary"
-                          : "text-gray-600 dark:text-gray-300 hover:text-primary"
+                          : "text-gray-600 dark:text-gray-300 hover:text-primary",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -108,14 +113,19 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.user_metadata.avatar_url || ""} alt={user.email || ""} />
+                        <AvatarImage
+                          src={user.user_metadata.avatar_url || ""}
+                          alt={user.email || ""}
+                        />
                         <AvatarFallback>{user.email?.[0]?.toUpperCase() || "U"}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     <div className="px-4 py-2 border-b">
-                      <p className="text-sm font-medium">{user.user_metadata.full_name || user.email}</p>
+                      <p className="text-sm font-medium">
+                        {user.user_metadata.full_name || user.email}
+                      </p>
                       <p className="text-xs text-muted-foreground">Seguridad</p>
                     </div>
                     <DropdownMenuItem asChild>
@@ -124,7 +134,10 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
                         Mi perfil
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 text-red-600">
+                    <DropdownMenuItem
+                      onClick={signOut}
+                      className="flex items-center gap-2 text-red-600"
+                    >
                       <LogOut className="h-4 w-4" />
                       Cerrar sesión
                     </DropdownMenuItem>

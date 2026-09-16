@@ -36,11 +36,13 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({ name, value: "", ...options });
         },
       },
-    }
+    },
   );
 
   // Refresh session if expired - required for Server Components
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Protected routes
   const protectedPaths = ["/dashboard", "/admin", "/security"];
@@ -58,7 +60,11 @@ export async function middleware(request: NextRequest) {
 
   if (isAuthPath && user) {
     // Ya logueado intentando entrar a /login|/register → a su panel según rol
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
     return NextResponse.redirect(new URL(homeForRole(profile?.role), request.url));
   }
 
@@ -66,11 +72,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/admin/:path*",
-    "/security/:path*",
-    "/login",
-    "/register",
-  ],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/security/:path*", "/login", "/register"],
 };

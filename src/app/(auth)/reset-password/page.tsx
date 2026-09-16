@@ -9,13 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { resetPasswordSchema, ResetPasswordInput } from "@/lib/validations/auth";
-import {
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/forms/form";
+import { Form, FormItem, FormLabel, FormControl, FormMessage } from "@/components/forms/form";
 import { Building2, Lock, Sparkles } from "lucide-react";
 
 export default function ResetPasswordPage() {
@@ -72,7 +66,10 @@ export default function ResetPasswordPage() {
                 <Sparkles className="h-5 w-5 shrink-0" />
                 <span className="font-medium">Enlace inválido o vencido. Pide uno nuevo.</span>
               </div>
-              <Link href="/forgot-password" className="inline-block text-sm font-medium text-primary hover:underline">
+              <Link
+                href="/forgot-password"
+                className="inline-block text-sm font-medium text-primary hover:underline"
+              >
                 Pedir nuevo enlace
               </Link>
             </div>
@@ -95,7 +92,12 @@ export default function ResetPasswordPage() {
                       render={({ field }) => (
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                          <Input type="password" placeholder="Mínimo 6 caracteres" className="pl-10" {...field} />
+                          <Input
+                            type="password"
+                            placeholder="Mínimo 6 caracteres"
+                            className="pl-10"
+                            {...field}
+                          />
                         </div>
                       )}
                     />
@@ -112,7 +114,12 @@ export default function ResetPasswordPage() {
                       render={({ field }) => (
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                          <Input type="password" placeholder="Repite la contraseña" className="pl-10" {...field} />
+                          <Input
+                            type="password"
+                            placeholder="Repite la contraseña"
+                            className="pl-10"
+                            {...field}
+                          />
                         </div>
                       )}
                     />
@@ -120,7 +127,11 @@ export default function ResetPasswordPage() {
                   <FormMessage />
                 </FormItem>
 
-                <Button type="submit" className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50"
+                  disabled={isLoading}
+                >
                   {isLoading ? "Guardando..." : "Guardar nueva contraseña"}
                 </Button>
               </Form>

@@ -15,9 +15,15 @@ const inviteSchema = z.object({
 /** Solo admin. Los layouts ya lo validan; esto es defensa en profundidad. */
 async function requireAdmin() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "No autenticado" as const };
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
   if (profile?.role !== "admin") return { error: "No autorizado" as const };
   return { adminId: user.id };
 }

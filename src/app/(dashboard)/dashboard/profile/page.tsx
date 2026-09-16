@@ -43,70 +43,66 @@ export default function ProfilePage() {
   }
 
   return (
-      <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight mb-8">Mi perfil</h1>
+    <div className="max-w-2xl">
+      <h1 className="text-3xl font-bold tracking-tight mb-8">Mi perfil</h1>
 
-        <Form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {message && (
-            <div
-              className={`p-3 rounded-md text-sm ${
-                message.type === "success"
-                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                  : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
+      <Form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {message && (
+          <div
+            className={`p-3 rounded-md text-sm ${
+              message.type === "success"
+                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
 
-          <FormItem>
-            <FormLabel>Nombre completo</FormLabel>
-            <FormControl>
-              <Controller
-                name="fullName"
-                control={form.control}
-                render={({ field }) => (
-                  <Input placeholder="Juan Pérez" {...field} />
-                )}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
+        <FormItem>
+          <FormLabel>Nombre completo</FormLabel>
+          <FormControl>
+            <Controller
+              name="fullName"
+              control={form.control}
+              render={({ field }) => <Input placeholder="Juan Pérez" {...field} />}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
 
-          <FormItem>
-            <FormLabel>Apartamento / Casa</FormLabel>
-            <FormControl>
-              <Controller
-                name="apartment"
-                control={form.control}
-                render={({ field }) => (
-                  <Input placeholder="Ej: 101, Casa 5, Torre B - 302" {...field} />
-                )}
-              />
-            </FormControl>
-            <FormDescription>Para que seguridad te identifique</FormDescription>
-            <FormMessage />
-          </FormItem>
+        <FormItem>
+          <FormLabel>Apartamento / Casa</FormLabel>
+          <FormControl>
+            <Controller
+              name="apartment"
+              control={form.control}
+              render={({ field }) => (
+                <Input placeholder="Ej: 101, Casa 5, Torre B - 302" {...field} />
+              )}
+            />
+          </FormControl>
+          <FormDescription>Para que seguridad te identifique</FormDescription>
+          <FormMessage />
+        </FormItem>
 
-          <FormItem>
-            <FormLabel>Teléfono</FormLabel>
-            <FormControl>
-              <Controller
-                name="phone"
-                control={form.control}
-                render={({ field }) => (
-                  <Input type="tel" placeholder="+57 300 123 4567" {...field} />
-                )}
-              />
-            </FormControl>
-            <FormDescription>Opcional, para contactos urgentes</FormDescription>
-            <FormMessage />
-          </FormItem>
+        <FormItem>
+          <FormLabel>Teléfono</FormLabel>
+          <FormControl>
+            <Controller
+              name="phone"
+              control={form.control}
+              render={({ field }) => <Input type="tel" placeholder="+57 300 123 4567" {...field} />}
+            />
+          </FormControl>
+          <FormDescription>Opcional, para contactos urgentes</FormDescription>
+          <FormMessage />
+        </FormItem>
 
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Guardando..." : "Guardar cambios"}
-          </Button>
-        </Form>
-      </div>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Guardando..." : "Guardar cambios"}
+        </Button>
+      </Form>
+    </div>
   );
 }

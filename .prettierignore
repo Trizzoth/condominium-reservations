@@ -1,0 +1,12 @@
+.next
+out
+build
+coverage
+playwright-report
+test-results
+pnpm-lock.yaml
+*.min.js
+
+tests/e2e-flow.spec.ts
+tests/nav-layouts.spec.ts
+tests/calendar-click.spec.ts

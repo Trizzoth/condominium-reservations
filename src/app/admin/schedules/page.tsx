@@ -70,9 +70,9 @@ export default function AdminSchedulesPage() {
     () =>
       createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       ),
-    []
+    [],
   );
 
   // Los setState viven en callbacks de promesa (no en el cuerpo síncrono
@@ -178,183 +178,213 @@ export default function AdminSchedulesPage() {
   const formatTime = (time: string) => time.slice(0, 5);
 
   return (
-      <div className="space-y-8">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestión de horarios</h1>
-            <p className="text-muted-foreground mt-1">Define disponibilidad por área y día de la semana</p>
-          </div>
-          <Button onClick={openCreateDialog} disabled={areas.length === 0}>
-            <Plus className="mr-2 h-4 w-4" /> Nuevo horario
-          </Button>
+    <div className="space-y-8">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestión de horarios</h1>
+          <p className="text-muted-foreground mt-1">
+            Define disponibilidad por área y día de la semana
+          </p>
         </div>
+        <Button onClick={openCreateDialog} disabled={areas.length === 0}>
+          <Plus className="mr-2 h-4 w-4" /> Nuevo horario
+        </Button>
+      </div>
 
-        {error && (
-          <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm">{error}</div>
-        )}
+      {error && <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm">{error}</div>}
 
-        {loading ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            </CardContent>
-          </Card>
-        ) : areas.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <CalendarDays className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-              <p>No hay áreas activas. Crea una en <a href="/admin/areas" className="underline">Gestión de áreas</a>.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            {areas.map((area) => {
-              const areaSchedules = getSchedulesForArea(area.id);
-              return (
-                <Card key={area.id}>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <CalendarDays className="h-5 w-5" />
-                      {area.name}
-                    </CardTitle>
-                    <Button size="sm" onClick={openCreateDialog}>
-                      <Plus className="mr-2 h-4 w-4" /> Agregar horario
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    {areaSchedules.length === 0 ? (
-                      <p className="text-muted-foreground text-center py-4">Sin horarios configurados</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {DAYS.map((day) => {
-                          const schedule = areaSchedules.find((s) => s.day_of_week === day.value);
-                          return (
-                            <div
-                              key={day.value}
-                              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="w-24 font-medium capitalize">{day.label}</span>
-                                {schedule ? (
-                                  <>
-                                    <Badge variant="default">
-                                      {formatTime(schedule.open_time)} - {formatTime(schedule.close_time)}
-                                    </Badge>
-                                    <Badge variant="secondary">Máx {schedule.max_duration_hours}h</Badge>
-                                  </>
-                                ) : (
-                                  <Badge variant="outline" className="text-muted-foreground">
-                                    Cerrado
+      {loading ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          </CardContent>
+        </Card>
+      ) : areas.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <CalendarDays className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p>
+              No hay áreas activas. Crea una en{" "}
+              <a href="/admin/areas" className="underline">
+                Gestión de áreas
+              </a>
+              .
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-6">
+          {areas.map((area) => {
+            const areaSchedules = getSchedulesForArea(area.id);
+            return (
+              <Card key={area.id}>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5" />
+                    {area.name}
+                  </CardTitle>
+                  <Button size="sm" onClick={openCreateDialog}>
+                    <Plus className="mr-2 h-4 w-4" /> Agregar horario
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {areaSchedules.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-4">
+                      Sin horarios configurados
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {DAYS.map((day) => {
+                        const schedule = areaSchedules.find((s) => s.day_of_week === day.value);
+                        return (
+                          <div
+                            key={day.value}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="w-24 font-medium capitalize">{day.label}</span>
+                              {schedule ? (
+                                <>
+                                  <Badge variant="default">
+                                    {formatTime(schedule.open_time)} -{" "}
+                                    {formatTime(schedule.close_time)}
                                   </Badge>
-                                )}
-                              </div>
-                              {schedule && (
-                                <div className="flex items-center gap-2">
-                                  <Button variant="ghost" size="icon" onClick={() => openEditDialog(schedule)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => deleteSchedule(schedule.id)}
-                                    className="text-red-600"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
+                                  <Badge variant="secondary">
+                                    Máx {schedule.max_duration_hours}h
+                                  </Badge>
+                                </>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">
+                                  Cerrado
+                                </Badge>
                               )}
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                            {schedule && (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEditDialog(schedule)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => deleteSchedule(schedule.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-        {/* Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingSchedule ? "Editar horario" : "Nuevo horario"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingSchedule ? "Editar horario" : "Nuevo horario"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="area">Área *</Label>
+              <Select
+                value={formState.common_area_id}
+                onValueChange={(v) => setFormState({ ...formState, common_area_id: v })}
+              >
+                <SelectTrigger id="area">
+                  <SelectValue placeholder="Selecciona un área" />
+                </SelectTrigger>
+                <SelectContent>
+                  {areas.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="area">Área *</Label>
-                <Select value={formState.common_area_id} onValueChange={(v) => setFormState({ ...formState, common_area_id: v })}>
-                  <SelectTrigger id="area">
-                    <SelectValue placeholder="Selecciona un área" />
+                <Label htmlFor="day">Día de la semana *</Label>
+                <Select
+                  value={formState.day_of_week}
+                  onValueChange={(v) => setFormState({ ...formState, day_of_week: v })}
+                >
+                  <SelectTrigger id="day">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {areas.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    {DAYS.map((d) => (
+                      <SelectItem key={d.value} value={d.value.toString()}>
+                        {d.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="day">Día de la semana *</Label>
-                  <Select value={formState.day_of_week} onValueChange={(v) => setFormState({ ...formState, day_of_week: v })} >
-                    <SelectTrigger id="day">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DAYS.map((d) => (
-                        <SelectItem key={d.value} value={d.value.toString()}>{d.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="maxDuration">Duración máxima (horas) *</Label>
-                  <Input
-                    id="maxDuration"
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={formState.max_duration_hours}
-                    onChange={(e) => setFormState({ ...formState, max_duration_hours: parseInt(e.target.value) || 4 })}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxDuration">Duración máxima (horas) *</Label>
+                <Input
+                  id="maxDuration"
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={formState.max_duration_hours}
+                  onChange={(e) =>
+                    setFormState({
+                      ...formState,
+                      max_duration_hours: parseInt(e.target.value) || 4,
+                    })
+                  }
+                />
               </div>
+            </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="open">Hora apertura *</Label>
-                  <Input
-                    id="open"
-                    type="time"
-                    value={formState.open_time}
-                    onChange={(e) => setFormState({ ...formState, open_time: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="close">Hora cierre *</Label>
-                  <Input
-                    id="close"
-                    type="time"
-                    value={formState.close_time}
-                    onChange={(e) => setFormState({ ...formState, close_time: e.target.value })}
-                  />
-                </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="open">Hora apertura *</Label>
+                <Input
+                  id="open"
+                  type="time"
+                  value={formState.open_time}
+                  onChange={(e) => setFormState({ ...formState, open_time: e.target.value })}
+                />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="close">Hora cierre *</Label>
+                <Input
+                  id="close"
+                  type="time"
+                  value={formState.close_time}
+                  onChange={(e) => setFormState({ ...formState, close_time: e.target.value })}
+                />
+              </div>
+            </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={submitting || !formState.common_area_id}>
-                  {submitting ? "Guardando..." : editingSchedule ? "Actualizar" : "Crear"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={submitting || !formState.common_area_id}>
+                {submitting ? "Guardando..." : editingSchedule ? "Actualizar" : "Crear"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

@@ -45,7 +45,7 @@ export function MobileNav({ items, currentPath }: { items: MobileNavItem[]; curr
                       "flex items-center gap-3 rounded-lg px-3 py-3 text-base font-medium transition-colors",
                       isActive
                         ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground",
                     )}
                   >
                     <Icon className="h-5 w-5" />

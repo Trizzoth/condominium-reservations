@@ -3,7 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { getUserEmailsByIds } from "@/lib/supabase/admin";
 import { z } from "zod";
-import { sendEmail, reservationCreatedEmail, reservationApprovedEmail, reservationRejectedEmail } from "@/lib/emails";
+import {
+  sendEmail,
+  reservationCreatedEmail,
+  reservationApprovedEmail,
+  reservationRejectedEmail,
+} from "@/lib/emails";
 import QRCode from "qrcode";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -26,7 +31,9 @@ export async function createReservation(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return { error: { form: ["No autenticado"] } };
@@ -106,10 +113,16 @@ export async function createReservation(formData: FormData) {
     const startTimeStr = format(start, "HH:mm");
     const endTimeStr = format(end, "HH:mm");
     if (startTimeStr < schedule.open_time || endTimeStr > schedule.close_time) {
-      return { error: { form: [`Horario fuera del permitido (${schedule.open_time} - ${schedule.close_time})`] } };
+      return {
+        error: {
+          form: [`Horario fuera del permitido (${schedule.open_time} - ${schedule.close_time})`],
+        },
+      };
     }
     if (durationHours > schedule.max_duration_hours) {
-      return { error: { form: [`Duración máxima para esta área: ${schedule.max_duration_hours} horas`] } };
+      return {
+        error: { form: [`Duración máxima para esta área: ${schedule.max_duration_hours} horas`] },
+      };
     }
   }
 
@@ -143,9 +156,13 @@ export async function createReservation(formData: FormData) {
       .single();
 
     if (user.email) {
-      const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
+      const startFormatted = format(
+        parseISO(reservation.start_time),
+        "d 'de' MMMM yyyy 'a las' HH:mm",
+        { locale: es },
+      );
       const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
-      
+
       await sendEmail({
         to: user.email,
         subject: "✅ Reserva recibida - Pendiente de aprobación",
@@ -160,16 +177,25 @@ export async function createReservation(formData: FormData) {
     }
   }
 
-  return { success: "Reserva enviada. Espera aprobación del admin.", reservationId: reservation?.id };
+  return {
+    success: "Reserva enviada. Espera aprobación del admin.",
+    reservationId: reservation?.id,
+  };
 }
 
 export async function approveReservationAction(reservationId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) return { error: "No autenticado" };
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
   if (profile?.role !== "admin") return { error: "No autorizado" };
 
   const { data: reservation, error } = await supabase
@@ -185,7 +211,11 @@ export async function approveReservationAction(reservationId: string) {
   const emails = await getUserEmailsByIds([reservation.user_id]);
   const recipientEmail = emails.get(reservation.user_id);
   if (recipientEmail) {
-    const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
+    const startFormatted = format(
+      parseISO(reservation.start_time),
+      "d 'de' MMMM yyyy 'a las' HH:mm",
+      { locale: es },
+    );
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
 
     // QR con el id para check-in en seguridad (si falla, el email va sin QR).
@@ -215,19 +245,25 @@ export async function approveReservationAction(reservationId: string) {
 
 export async function rejectReservationAction(reservationId: string, adminNotes?: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) return { error: "No autenticado" };
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
   if (profile?.role !== "admin") return { error: "No autorizado" };
 
   const { data: reservation, error } = await supabase
     .from("reservations")
-    .update({ 
-      status: "rejected", 
+    .update({
+      status: "rejected",
       admin_notes: adminNotes || null,
-      updated_at: new Date().toISOString() 
+      updated_at: new Date().toISOString(),
     })
     .eq("id", reservationId)
     .select("*, common_areas(name), profiles(full_name)")
@@ -239,9 +275,13 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
   const emails = await getUserEmailsByIds([reservation.user_id]);
   const recipientEmail = emails.get(reservation.user_id);
   if (recipientEmail) {
-    const startFormatted = format(parseISO(reservation.start_time), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
+    const startFormatted = format(
+      parseISO(reservation.start_time),
+      "d 'de' MMMM yyyy 'a las' HH:mm",
+      { locale: es },
+    );
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
-    
+
     await sendEmail({
       to: recipientEmail,
       subject: "❌ Tu reserva ha sido rechazada",
@@ -260,7 +300,9 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
 
 export async function cancelReservationAction(reservationId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) return { error: "No autenticado" };
 

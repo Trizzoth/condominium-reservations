@@ -26,18 +26,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
 
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
     };
 
     getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
@@ -48,7 +52,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     );
     await supabase.auth.signOut();
     router.push("/login");
@@ -86,7 +90,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-soft">
                   <Building2 className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <span className="text-xl font-bold text-foreground hidden sm:block">Reservas Condominio</span>
+                <span className="text-xl font-bold text-foreground hidden sm:block">
+                  Reservas Condominio
+                </span>
               </Link>
               <nav className="hidden md:flex items-center gap-1 bg-muted/50 rounded-xl p-1">
                 {navItems.map((item) => {
@@ -100,7 +106,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                         "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                         isActive
                           ? "bg-primary text-primary-foreground shadow-soft"
-                          : "text-muted-foreground hover:text-foreground hover:bg-background"
+                          : "text-muted-foreground hover:text-foreground hover:bg-background",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -114,27 +120,44 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full hover:bg-accent transition-colors">
+                    <Button
+                      variant="ghost"
+                      className="relative h-9 w-9 rounded-full hover:bg-accent transition-colors"
+                    >
                       <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-                        <AvatarImage src={user.user_metadata.avatar_url || ""} alt={user.email || ""} />
+                        <AvatarImage
+                          src={user.user_metadata.avatar_url || ""}
+                          alt={user.email || ""}
+                        />
                         <AvatarFallback className="bg-primary/10 text-primary font-medium">
                           {user.email?.[0]?.toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 animate-scale-in shadow-card border-border">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 animate-scale-in shadow-card border-border"
+                  >
                     <div className="px-4 py-3 border-b border-border">
-                      <p className="text-sm font-semibold text-foreground">{user.user_metadata.full_name || user.email}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {user.user_metadata.full_name || user.email}
+                      </p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard/profile" className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-accent transition-colors">
+                      <Link
+                        href="/dashboard/profile"
+                        className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-accent transition-colors"
+                      >
                         <UserIcon className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Mi perfil</span>
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={signOut} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors">
+                    <DropdownMenuItem
+                      onClick={signOut}
+                      className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors"
+                    >
                       <LogOut className="h-4 w-4" />
                       <span className="text-sm font-medium">Cerrar sesión</span>
                     </DropdownMenuItem>
@@ -145,7 +168,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">{children}</main>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        {children}
+      </main>
     </div>
   );
 }

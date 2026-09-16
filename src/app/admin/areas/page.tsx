@@ -54,9 +54,9 @@ export default function AdminAreasPage() {
     () =>
       createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       ),
-    []
+    [],
   );
 
   // Los setState viven en callbacks de promesa (no en el cuerpo síncrono
@@ -92,10 +92,7 @@ export default function AdminAreasPage() {
 
     let result;
     if (editingArea) {
-      result = await supabase
-        .from("common_areas")
-        .update(areaData)
-        .eq("id", editingArea.id);
+      result = await supabase.from("common_areas").update(areaData).eq("id", editingArea.id);
     } else {
       result = await supabase.from("common_areas").insert(areaData);
     }
@@ -160,169 +157,176 @@ export default function AdminAreasPage() {
   };
 
   return (
-      <div className="space-y-8">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestión de áreas comunes</h1>
-            <p className="text-muted-foreground mt-1">Crea y configura áreas reservables</p>
-          </div>
-          <Button onClick={openCreateDialog}>
-            <Plus className="mr-2 h-4 w-4" /> Nueva área
-          </Button>
+    <div className="space-y-8">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Gestión de áreas comunes</h1>
+          <p className="text-muted-foreground mt-1">Crea y configura áreas reservables</p>
         </div>
+        <Button onClick={openCreateDialog}>
+          <Plus className="mr-2 h-4 w-4" /> Nueva área
+        </Button>
+      </div>
 
-        {error && (
-          <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm">{error}</div>
-        )}
+      {error && <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm">{error}</div>}
 
-        {loading ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Áreas registradas ({areas.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {areas.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No hay áreas creadas aún</p>
-                    <Button onClick={openCreateDialog} className="mt-4">
-                      <Plus className="mr-2 h-4 w-4" /> Crear primera área
-                    </Button>
-                  </div>
-                ) : (
-                  areas.map((area) => (
-                    <div key={area.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-lg">
-                          <Building2 className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{area.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Capacidad: {area.capacity} personas ·{" "}
-                            {area.is_active ? (
-                              <Badge variant="default" className="ml-2">Activa</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="ml-2">Inactiva</Badge>
-                            )}
-                          </p>
-                          {area.description && (
-                            <p className="text-sm text-muted-foreground mt-1">{area.description}</p>
-                          )}
-                        </div>
+      {loading ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Áreas registradas ({areas.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {areas.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No hay áreas creadas aún</p>
+                  <Button onClick={openCreateDialog} className="mt-4">
+                    <Plus className="mr-2 h-4 w-4" /> Crear primera área
+                  </Button>
+                </div>
+              ) : (
+                areas.map((area) => (
+                  <div
+                    key={area.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-primary/10 rounded-lg">
+                        <Building2 className="h-6 w-6 text-primary" />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleActive(area)}
-                          className={area.is_active ? "text-green-600" : "text-gray-400"}
-                        >
-                          {area.is_active ? "✓" : "○"}
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(area)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteArea(area.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div>
+                        <p className="font-medium">{area.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Capacidad: {area.capacity} personas ·{" "}
+                          {area.is_active ? (
+                            <Badge variant="default" className="ml-2">
+                              Activa
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="ml-2">
+                              Inactiva
+                            </Badge>
+                          )}
+                        </p>
+                        {area.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{area.description}</p>
+                        )}
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleActive(area)}
+                        className={area.is_active ? "text-green-600" : "text-gray-400"}
+                      >
+                        {area.is_active ? "✓" : "○"}
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(area)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteArea(area.id)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>{editingArea ? "Editar área" : "Nueva área común"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nombre *</Label>
-                  <Input
-                    id="name"
-                    value={formState.name}
-                    onChange={(e) => setFormState({ ...formState, name: e.target.value })}
-                    placeholder="Ej: Salón de eventos, Piscina, Cancha de fútbol"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="capacity">Capacidad *</Label>
-                  <Input
-                    id="capacity"
-                    type="number"
-                    min="1"
-                    value={formState.capacity}
-                    onChange={(e) => setFormState({ ...formState, capacity: parseInt(e.target.value) || 0 })}
-                    required
-                  />
-                </div>
-              </div>
+      {/* Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingArea ? "Editar área" : "Nueva área común"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
-                <Textarea
-                  id="description"
-                  value={formState.description}
-                  onChange={(e) => setFormState({ ...formState, description: e.target.value })}
-                  placeholder="Descripción breve del área"
-                  rows={3}
+                <Label htmlFor="name">Nombre *</Label>
+                <Input
+                  id="name"
+                  value={formState.name}
+                  onChange={(e) => setFormState({ ...formState, name: e.target.value })}
+                  placeholder="Ej: Salón de eventos, Piscina, Cancha de fútbol"
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rules">Reglas de uso</Label>
-                <Textarea
-                  id="rules"
-                  value={formState.rules}
-                  onChange={(e) => setFormState({ ...formState, rules: e.target.value })}
-                  placeholder="Ej: Prohibido fumar, máximo 4 horas, reservar con 2h de anticipación"
-                  rows={3}
+                <Label htmlFor="capacity">Capacidad *</Label>
+                <Input
+                  id="capacity"
+                  type="number"
+                  min="1"
+                  value={formState.capacity}
+                  onChange={(e) =>
+                    setFormState({ ...formState, capacity: parseInt(e.target.value) || 0 })
+                  }
+                  required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="is_active">Estado</Label>
-                <Select
-                  value={formState.is_active.toString()}
-                  onValueChange={(v) => setFormState({ ...formState, is_active: v === "true" })}
-                >
-                  <SelectTrigger id="is_active">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">Activa</SelectItem>
-                    <SelectItem value="false">Inactiva</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Guardando..." : editingArea ? "Actualizar" : "Crear"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                value={formState.description}
+                onChange={(e) => setFormState({ ...formState, description: e.target.value })}
+                placeholder="Descripción breve del área"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rules">Reglas de uso</Label>
+              <Textarea
+                id="rules"
+                value={formState.rules}
+                onChange={(e) => setFormState({ ...formState, rules: e.target.value })}
+                placeholder="Ej: Prohibido fumar, máximo 4 horas, reservar con 2h de anticipación"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="is_active">Estado</Label>
+              <Select
+                value={formState.is_active.toString()}
+                onValueChange={(v) => setFormState({ ...formState, is_active: v === "true" })}
+              >
+                <SelectTrigger id="is_active">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Activa</SelectItem>
+                  <SelectItem value="false">Inactiva</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Guardando..." : editingArea ? "Actualizar" : "Crear"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
