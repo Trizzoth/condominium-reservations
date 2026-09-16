@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   signInSchema,
   signUpSchema,
@@ -132,7 +133,11 @@ export async function updateProfile(formData: FormData) {
     return { error: { form: ["No autenticado"] } };
   }
 
-  const { error } = await supabase.from("profiles").upsert({
+  // Service-role: RLS bloquea el upsert directo en `profiles` (probado en
+  // prod: "new row violates row-level security policy"). El servidor valida
+  // que solo toca su propia fila y el schema no admite `role` (no escalable).
+  const adminDb = createAdminClient();
+  const { error } = await adminDb.from("profiles").upsert({
     id: user.id,
     full_name: validated.data.fullName,
     apartment: validated.data.apartment,
