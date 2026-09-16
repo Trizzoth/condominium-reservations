@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* La app está diseñada en claro. En Tailwind v4 `dark:` sigue al SO por
+   defecto y mezclaba fondos oscuros con vars claras (ilegible).
+   Con variante por clase `.dark` (que nada agrega) el modo oscuro queda
+   inerte hasta que se diseñe un dark real. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Los tokens son tripletes HSL crudos (--primary: 199 89% 48%):
      hay que envolverlos en hsl() o computan a color inválido
