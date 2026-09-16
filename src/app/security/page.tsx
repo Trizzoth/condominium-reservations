@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { getUserEmailsByIds } from "@/lib/supabase/admin";
+import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +66,9 @@ async function markNoShow(formData: FormData) {
 }
 
 export default async function SecurityDashboardPage() {
-  const supabase = await createClient();
+  // Service-role: RLS impide a security ver reservas ajenas y profiles
+  // ajenos. El layout de ruta ya validó el rol.
+  const supabase = createAdminClient();
 
   const today = new Date();
   const startOfToday = startOfDay(today).toISOString();

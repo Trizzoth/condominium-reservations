@@ -1,18 +1,52 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Search, MoreHorizontal, Shield, User, Building2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Users, Search, Shield, User, Building2 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { InviteUserForm, RoleSelect, DeleteUserButton } from "./user-actions";
 
-export default async function AdminUsersPage() {
-  const supabase = await createClient();
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; role?: string }>;
+}) {
+  // Service-role: RLS solo deja ver el profile propio. Layout ya validó admin.
+  const adminDb = createAdminClient();
+  // Sesión para saber quién es el admin actual (bloquear auto-edición).
+  const userClient = await createClient();
+  const { data: { user: currentUser } } = await userClient.auth.getUser();
 
-  const { data: profiles } = await supabase
+  const { q = "", role = "all" } = await searchParams;
+
+  const { data: profiles } = await adminDb
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false });
+
+  const emailsByUserId = await getUserEmailsByIds((profiles || []).map((p) => p.id as string));
+  const query = q.trim().toLowerCase();
+  const filtered = (profiles || [])
+    .map((p) => ({ ...p, email: emailsByUserId.get(p.id as string) || null }))
+    .filter((p) => {
+      if (role !== "all" && p.role !== role) return false;
+      if (!query) return true;
+      return (
+        (p.full_name || "").toLowerCase().includes(query) ||
+        (p.email || "").toLowerCase().includes(query) ||
+        (p.apartment || "").toLowerCase().includes(query)
+      );
+    });
 
   const roleConfig = {
     resident: { label: "Residente", color: "bg-blue-100 text-blue-800", icon: User },
@@ -27,9 +61,31 @@ export default async function AdminUsersPage() {
             <h1 className="text-3xl font-bold tracking-tight">Gestión de usuarios</h1>
             <p className="text-muted-foreground mt-1">Administra residentes, admins y seguridad</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline"><Search className="mr-2 h-4 w-4" /> Buscar</Button>
-            <Button><UserPlus className="mr-2 h-4 w-4" /> Invitar usuario</Button>
+          <div className="flex flex-col gap-3">
+            <form method="GET" className="flex flex-col gap-2 sm:flex-row">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input name="q" defaultValue={q} placeholder="Nombre, email o apartamento" className="pl-9" />
+              </div>
+              <Select name="role" defaultValue={role}>
+                <SelectTrigger className="w-40" aria-label="Filtrar por rol">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los roles</SelectItem>
+                  <SelectItem value="resident">Residentes</SelectItem>
+                  <SelectItem value="admin">Admins</SelectItem>
+                  <SelectItem value="security">Seguridad</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" variant="outline">Buscar</Button>
+            </form>
+            {(q || role !== "all") && (
+              <a href="/admin/users" className="text-sm font-medium text-primary hover:underline">
+                Limpiar filtros
+              </a>
+            )}
+            <InviteUserForm />
           </div>
         </div>
 
@@ -85,15 +141,18 @@ export default async function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {profiles?.map((p) => {
+                  {filtered?.map((p) => {
                     const config = roleConfig[p.role as keyof typeof roleConfig];
                     const Icon = config?.icon || User;
+                    const isSelf = currentUser && p.id === currentUser.id;
                     return (
                       <tr key={p.id} className="hover:bg-muted/50">
                         <td className="py-4 px-4">
                           <div>
-                            <p className="font-medium">{p.full_name || "Sin nombre"}</p>
-                            <p className="text-xs text-muted-foreground">{p.id.slice(0, 8)}...</p>
+                            <p className="font-medium">{p.full_name || p.email || "Sin nombre"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {p.full_name && p.email ? p.email : `${(p.id as string).slice(0, 8)}...`}
+                            </p>
                           </div>
                         </td>
                         <td className="py-4 px-4">
@@ -108,13 +167,9 @@ export default async function AdminUsersPage() {
                           {format(parseISO(p.created_at), "d MMM yyyy", { locale: es })}
                         </td>
                         <td className="py-4 px-4">
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="icon" title="Cambiar rol">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="text-red-600" title="Eliminar">
-                              <User className="h-4 w-4" />
-                            </Button>
+                          <div className="flex items-center gap-2">
+                            <RoleSelect userId={p.id as string} currentRole={p.role} disabled={!!isSelf} />
+                            <DeleteUserButton userId={p.id as string} disabled={!!isSelf} />
                           </div>
                         </td>
                       </tr>
@@ -122,10 +177,10 @@ export default async function AdminUsersPage() {
                   })}
                 </tbody>
               </table>
-              {profiles?.length === 0 && (
+              {filtered?.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No hay usuarios registrados</p>
+                  <p>{q || role !== "all" ? "Sin resultados para esos filtros" : "No hay usuarios registrados"}</p>
                 </div>
               )}
             </div>
