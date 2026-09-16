@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Marca como `no_show` las reservas aprobadas que ya terminaron
- * sin check-in. Pensado para Vercel Cron (ver vercel.json).
+ * sin check-in. Pensado para Vercel Cron (ver vercel.json, horario).
  * Requiere header: Authorization: Bearer <CRON_SECRET>
  */
 export async function GET(request: Request) {
