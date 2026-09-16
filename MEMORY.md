@@ -96,19 +96,26 @@ availability_schedules (
 - ✅ pnpm 11.26.0 instalado (Arch/EndeavourOS)
 - ✅ Node v26.8.2
 - ✅ Git 2.55.0
-- ⏳ Proyecto Next.js: **PENDIENTE CREAR**
+- ✅ Proyecto Next.js 14 + TypeScript + Tailwind creado
+- ✅ Supabase client/server + middleware auth configurado
+- ✅ shadcn/ui components (button, input, label, card, dialog, select, form)
+- ✅ Repo GitHub creado: https://github.com/Trizzoth/miproyecto-reservas (privado)
+- ✅ Git flow configurado: `main` (producción) ← `develop` (integración) ← `feature/*`
 - ⏳ Supabase project: **PENDIENTE CREAR**
-- ⏳ Repo GitHub: **PENDIENTE CONECTAR**
+- ⏳ .env.local con credenciales: **PENDIENTE**
 
 ## Próximos Pasos Inmediatos
 
-1. `pnpm create next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm`
-2. Instalar dependencias: `@supabase/supabase-js`, `@supabase/ssr`, `zod`, `react-hook-form`, `@hookform/resolvers`, `lucide-react`, `clsx`, `tailwind-merge`, `date-fns`
-3. shadcn/ui init + componentes base (button, input, card, dialog, form, select, calendar)
-4. Configurar Supabase client (server + client)
-5. Middleware auth
-6. Esquema BD en Supabase SQL Editor
-7. Crear repo GitHub y push inicial
+1. ✅ `pnpm create next-app@latest` - COMPLETADO
+2. ✅ Dependencias instaladas - COMPLETADO
+3. ✅ shadcn/ui + componentes base - COMPLETADO
+4. ✅ Supabase client/server + middleware - COMPLETADO
+5. ✅ Repo GitHub + git flow - COMPLETADO
+6. 🔄 **Crear proyecto Supabase** → copiar URL + anon key + service role key
+7. 🔄 **Crear `.env.local`** con credenciales Supabase
+8. 🔄 **Ejecutar SQL schema** en Supabase SQL Editor (ver MEMORY.md líneas 23-70)
+9. 🔄 **Crear Issue #1** en GitHub: "feat: Auth flow (login/register/magic link + perfil)"
+10. 🔄 **Crear rama** `feature/auth-flow` desde `develop`
 
 ## Credenciales / Secrets (NO COMMITEAR)
 
