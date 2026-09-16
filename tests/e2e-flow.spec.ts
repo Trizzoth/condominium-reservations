@@ -35,6 +35,13 @@ test.describe('MVP Reservas Condominio - Páginas principales', () => {
     expect(icon.status()).toBe(200);
   });
 
+  test('Con SO en oscuro la app se sigue viendo clara (Issue #19)', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('http://localhost:3000/login');
+    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(bg).toBe('rgb(255, 255, 255)');
+  });
+
   test('Register page carga correctamente', async ({ page }) => {
     await page.goto('http://localhost:3000/register');
     await expect(page.locator('h1:has-text("Crear cuenta")')).toBeVisible();
