@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { sendEmail, reservationCreatedEmail, reservationApprovedEmail, reservationRejectedEmail } from "@/lib/emails";
 import { format, parseISO } from "date-fns";

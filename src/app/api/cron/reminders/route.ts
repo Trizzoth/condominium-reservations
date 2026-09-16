@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, reservationReminderEmail } from "@/lib/emails";
 import { format, parseISO, addDays, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -15,7 +15,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = await createClient();
+  // El cron de Vercel no lleva cookies de sesión, así que el cliente
+  // con anon key + RLS devolvería 0 filas. Se usa service-role (solo servidor).
+  let supabase;
+  try {
+    supabase = createAdminClient();
+  } catch (err) {
+    console.error("Cron reminders config error:", err);
+    return NextResponse.json({ error: "Service-role client not configured" }, { status: 500 });
+  }
 
   // Find reservations for tomorrow that are approved
   const tomorrow = addDays(new Date(), 1);

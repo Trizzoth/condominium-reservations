@@ -33,8 +33,6 @@ export function Calendar({
 
   const disabled = (date: Date) => isDateInArray(date, allDisabledDays);
 
-  const isUnavailableDate = (date: Date) => isDateInArray(date, unavailableDays);
-
   return (
     <DayPicker
       mode="single"

@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/layout/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Building2, Clock, CheckCircle, XCircle, MoreHorizontal, Filter } from "lucide-react";
+import { Calendar, Building2, Clock, CheckCircle, XCircle, Filter } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 

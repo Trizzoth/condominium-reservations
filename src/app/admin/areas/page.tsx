@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -24,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Building2, Clock, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, Building2, Loader2 } from "lucide-react";
 
 interface Area {
   id: string;

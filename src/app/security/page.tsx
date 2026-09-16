@@ -3,9 +3,67 @@ import { SecurityLayout } from "@/components/layout/security-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Building2, Clock, CheckCircle, XCircle, AlertCircle, UserCheck, UserX, Loader2, ArrowRight, ArrowLeft, Phone } from "lucide-react";
-import { format, parseISO, startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { Calendar, Users, Building2, Clock, AlertCircle, UserCheck, UserX, ArrowRight, Phone } from "lucide-react";
+import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
+import { revalidatePath } from "next/cache";
+
+// Solo roles operativos pueden registrar movimientos de acceso.
+async function requireSecurityRole() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== "security" && profile?.role !== "admin") return null;
+  return supabase;
+}
+
+// Server Actions (se invocan vía <form action>, no con onClick:
+// este archivo es un Server Component y onClick no funciona en servidor).
+async function checkIn(formData: FormData) {
+  "use server";
+  const supabase = await requireSecurityRole();
+  const reservationId = formData.get("reservationId");
+  if (!supabase || typeof reservationId !== "string") return;
+  await supabase
+    .from("reservations")
+    .update({
+      checked_in_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", reservationId);
+  revalidatePath("/security");
+}
+
+async function checkOut(formData: FormData) {
+  "use server";
+  const supabase = await requireSecurityRole();
+  const reservationId = formData.get("reservationId");
+  if (!supabase || typeof reservationId !== "string") return;
+  await supabase
+    .from("reservations")
+    .update({
+      checked_out_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", reservationId);
+  revalidatePath("/security");
+}
+
+async function markNoShow(formData: FormData) {
+  "use server";
+  const supabase = await requireSecurityRole();
+  const reservationId = formData.get("reservationId");
+  if (!supabase || typeof reservationId !== "string") return;
+  await supabase
+    .from("reservations")
+    .update({
+      status: "no_show",
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", reservationId);
+  revalidatePath("/security");
+}
 
 export default async function SecurityDashboardPage() {
   const supabase = await createClient();
@@ -13,15 +71,6 @@ export default async function SecurityDashboardPage() {
   const today = new Date();
   const startOfToday = startOfDay(today).toISOString();
   const endOfToday = endOfDay(today).toISOString();
-
-  // Get today's approved reservations
-  const { data: todayReservations } = await supabase
-    .from("reservations")
-    .select("*, common_areas(name), profiles(full_name, apartment, email, phone)")
-    .eq("status", "approved")
-    .gte("start_time", startOfToday)
-    .lte("start_time", endOfToday)
-    .order("start_time", { ascending: true });
 
   // Get all approved reservations for today (including ones that started earlier but haven't ended)
   const { data: activeReservations } = await supabase
@@ -152,8 +201,8 @@ export default async function SecurityDashboardPage() {
                     <CardContent className="py-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <div className={`p-3 rounded-lg ${config?.color.replace("bg-", "bg-").replace("text-", "bg-")}/20`}>
-                            <Icon className="h-6 w-6" style={{ color: config?.color.split(" ")[1]?.replace("text-", "") }} />
+                          <div className="p-3 rounded-lg bg-muted">
+                            <Icon className="h-6 w-6 text-primary" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -181,28 +230,37 @@ export default async function SecurityDashboardPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           {r.security_status === "pending_checkin" && new Date(r.start_time) <= now && (
-                            <>
-                              <Button
-                                onClick={() => checkIn(r.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <UserCheck className="mr-2 h-4 w-4" /> Entrada
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={() => markNoShow(r.id)}
-                              >
-                                <UserX className="mr-2 h-4 w-4" /> No llegó
-                              </Button>
-                            </>
+                            <div className="flex items-center gap-2">
+                              <form action={checkIn}>
+                                <input type="hidden" name="reservationId" value={r.id} />
+                                <Button
+                                  type="submit"
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <UserCheck className="mr-2 h-4 w-4" /> Entrada
+                                </Button>
+                              </form>
+                              <form action={markNoShow}>
+                                <input type="hidden" name="reservationId" value={r.id} />
+                                <Button
+                                  type="submit"
+                                  variant="destructive"
+                                >
+                                  <UserX className="mr-2 h-4 w-4" /> No llegó
+                                </Button>
+                              </form>
+                            </div>
                           )}
                           {r.security_status === "checked_in" && (
-                            <Button
-                              onClick={() => checkOut(r.id)}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              <ArrowRight className="mr-2 h-4 w-4" /> Salida
-                            </Button>
+                            <form action={checkOut}>
+                              <input type="hidden" name="reservationId" value={r.id} />
+                              <Button
+                                type="submit"
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <ArrowRight className="mr-2 h-4 w-4" /> Salida
+                              </Button>
+                            </form>
                           )}
                           {r.security_status === "checked_out" && (
                             <Badge variant="default" className="bg-blue-100 text-blue-800">
@@ -240,39 +298,5 @@ export default async function SecurityDashboardPage() {
       </div>
     </SecurityLayout>
   );
-}
-
-// Server Actions for check-in/out
-async function checkIn(reservationId: string) {
-  const supabase = await createClient();
-  await supabase
-    .from("reservations")
-    .update({ 
-      checked_in_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", reservationId);
-}
-
-async function checkOut(reservationId: string) {
-  const supabase = await createClient();
-  await supabase
-    .from("reservations")
-    .update({ 
-      checked_out_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", reservationId);
-}
-
-async function markNoShow(reservationId: string) {
-  const supabase = await createClient();
-  await supabase
-    .from("reservations")
-    .update({ 
-      status: "no_show",
-      updated_at: new Date().toISOString()
-    })
-    .eq("id", reservationId);
 }
 
