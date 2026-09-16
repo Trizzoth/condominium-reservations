@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn, sendMagicLink } from "../actions";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,10 @@ import {
 import { Building2, Mail, Lock, Sparkles } from "lucide-react";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  // El middleware usa `redirect`, enlaces viejos pueden usar `callbackUrl`.
+  // null = sin destino explícito → la Server Action usa el home del rol.
+  const callbackUrl = searchParams.get("callbackUrl") ?? searchParams.get("redirect");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,15 +38,16 @@ function LoginForm() {
     const formData = new FormData();
     formData.set("email", data.email);
     formData.set("password", data.password);
+    // La Server Action redirige según rol; le pasamos el destino deseado
+    // (solo se respeta si el rol puede acceder a esa ruta).
+    if (callbackUrl) formData.set("callbackUrl", callbackUrl);
     const result = await signIn(formData);
     setIsLoading(false);
     if (result?.error) {
       const err = result.error as { form?: string[] };
       setMessage({ type: "error", text: err.form?.[0] || "Error al iniciar sesión" });
-    } else {
-      router.push(callbackUrl);
-      router.refresh();
     }
+    // En éxito la Server Action hace redirect (no retorna): no hay else.
   }
 
   async function onMagicLink(e: React.FormEvent) {

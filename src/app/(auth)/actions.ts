@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { signInSchema, signUpSchema, magicLinkSchema, profileSchema } from "@/lib/validations/auth";
+import { resolvePostLoginRedirect } from "@/lib/auth-redirect";
 import { redirect } from "next/navigation";
 
 export async function signIn(formData: FormData) {
@@ -21,7 +22,19 @@ export async function signIn(formData: FormData) {
     return { error: { form: [error.message] } };
   }
 
-  redirect("/dashboard");
+  // Redirect según rol (admin→/admin, security→/security, resident→/dashboard),
+  // respetando callbackUrl solo si el rol puede acceder a esa ruta.
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
+  const callbackUrl = formData.get("callbackUrl");
+  redirect(
+    resolvePostLoginRedirect(
+      profile?.role,
+      typeof callbackUrl === "string" ? callbackUrl : null
+    )
+  );
 }
 
 export async function signUp(formData: FormData) {
