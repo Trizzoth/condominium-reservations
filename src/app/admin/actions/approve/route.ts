@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { approveReservationAction } from "@/app/(dashboard)/dashboard/reservations/actions";
 import { redirect } from "next/navigation";
 import { NextRequest } from "next/server";
 
@@ -6,21 +6,11 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const reservationId = formData.get("reservationId") as string;
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const result = await approveReservationAction(reservationId);
 
-  if (!user) return redirect("/login");
-
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") return redirect("/dashboard");
-
-  await supabase
-    .from("reservations")
-    .update({
-      status: "approved",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", reservationId);
+  if (result.error) {
+    return new Response(JSON.stringify({ error: result.error }), { status: 400 });
+  }
 
   return redirect("/admin");
 }

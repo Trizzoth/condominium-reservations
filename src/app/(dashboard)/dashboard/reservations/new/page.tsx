@@ -177,12 +177,6 @@ export default function NewReservationPage() {
       return;
     }
 
-    const available = await checkAvailability(selectedDate, selectedStartTime, selectedEndTime);
-    if (!available) {
-      setError("Ese horario ya está reservado. Elige otro.");
-      return;
-    }
-
     setSubmitting(true);
 
     const start = new Date(selectedDate);
@@ -193,16 +187,23 @@ export default function NewReservationPage() {
     const [eh, em] = selectedEndTime.split(":").map(Number);
     end.setHours(eh, em, 0, 0);
 
-    const { error } = await supabase.from("reservations").insert({
-      common_area_id: selectedArea,
-      start_time: start.toISOString(),
-      end_time: end.toISOString(),
-      status: "pending",
+    // Call Server Action
+    const formData = new FormData();
+    formData.set("commonAreaId", selectedArea);
+    formData.set("startTime", start.toISOString());
+    formData.set("endTime", end.toISOString());
+
+    const response = await fetch("/api/reservations/create", {
+      method: "POST",
+      body: formData,
     });
 
+    const result = await response.json();
     setSubmitting(false);
-    if (error) {
-      setError(error.message);
+
+    if (result.error) {
+      const err = result.error as { form?: string[] };
+      setError(err.form?.[0] || "Error al crear reserva");
     } else {
       setSuccess("Reserva enviada. Espera aprobación del admin.");
       setTimeout(() => router.push("/dashboard/reservations"), 2000);
