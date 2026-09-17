@@ -16,6 +16,7 @@ import { Calendar, Clock, AlertCircle, CheckCircle, Loader2, CalendarDays } from
 import { format, startOfDay, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { createBrowserClient } from "@supabase/ssr";
+import { createReservation } from "../actions";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface TimeSlot {
@@ -204,16 +205,13 @@ export default function NewReservationPage() {
     const [eh, em] = selectedEndTime.split(":").map(Number);
     end.setHours(eh, em, 0, 0);
 
-    const response = await fetch("/api/reservations/create", {
-      method: "POST",
-      body: new URLSearchParams({
-        commonAreaId: selectedArea,
-        startTime: start.toISOString(),
-        endTime: end.toISOString(),
-      }),
-    });
+    // Server Action directa (RULES: sin API Routes para mutaciones).
+    const formData = new FormData();
+    formData.set("commonAreaId", selectedArea);
+    formData.set("startTime", start.toISOString());
+    formData.set("endTime", end.toISOString());
 
-    const result = await response.json();
+    const result = await createReservation(formData);
     setSubmitting(false);
     if (result.error) {
       const err = result.error as { form?: string[] };
