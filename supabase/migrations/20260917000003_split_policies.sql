@@ -11,6 +11,24 @@
 ALTER TABLE availability_schedules
 ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
 
+-- 0b. Idempotencia: si una corrida previa (o policies creadas a mano)
+-- ya dejó estos nombres, se dropean para recrear limpio. Re-ejecutable.
+DROP POLICY IF EXISTS "Admins select profiles" ON profiles;
+DROP POLICY IF EXISTS "Users insert own profile" ON profiles;
+DROP POLICY IF EXISTS "Users update own profile" ON profiles;
+DROP POLICY IF EXISTS "Admins select areas" ON common_areas;
+DROP POLICY IF EXISTS "Admins insert areas" ON common_areas;
+DROP POLICY IF EXISTS "Admins update areas" ON common_areas;
+DROP POLICY IF EXISTS "Admins delete areas" ON common_areas;
+DROP POLICY IF EXISTS "Admins select reservations" ON reservations;
+DROP POLICY IF EXISTS "Admins insert reservations" ON reservations;
+DROP POLICY IF EXISTS "Admins update reservations" ON reservations;
+DROP POLICY IF EXISTS "Admins delete reservations" ON reservations;
+DROP POLICY IF EXISTS "Admins select schedules" ON availability_schedules;
+DROP POLICY IF EXISTS "Admins insert schedules" ON availability_schedules;
+DROP POLICY IF EXISTS "Admins update schedules" ON availability_schedules;
+DROP POLICY IF EXISTS "Admins delete schedules" ON availability_schedules;
+
 -- 1. profiles: admin por JWT (la versión con EXISTS sobre profiles
 -- recursaba), INSERT propio (faltaba: guardar perfil fallaba) y
 -- UPDATE propio con WITH CHECK anti-escalación de rol.
