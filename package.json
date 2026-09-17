@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
+    "db:seed": "node scripts/seed.ts",
+    "test:concurrency": "node scripts/concurrencia.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
