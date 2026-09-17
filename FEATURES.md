@@ -9,8 +9,10 @@
 | Login email/password         | `src/app/(auth)/login/page.tsx`                   | ✅     | Server Action `signIn`                |
 | Register con apartment/phone | `src/app/(auth)/register/page.tsx`                | ✅     | Metadata en signUp                    |
 | Magic Link                   | `src/app/(auth)/login/page.tsx`                   | ✅     | Server Action `sendMagicLink`         |
-| Callback auth                | `src/app/auth/callback/route.ts`                  | ✅     | Exchange code for session             |
-| Perfil usuario               | `src/app/(dashboard)/dashboard/profile/page.tsx`  | ✅     | Server Action `updateProfile`         |
+| Callback auth                | `src/app/auth/callback/route.ts`                 | ✅     | Exchange + redirect por rol                  |
+| Perfil usuario               | `src/app/(dashboard)/dashboard/profile/page.tsx`  | ✅     | Upsert service-role + precarga               |
+| Redirect por rol             | `src/lib/auth-redirect.ts` + `signIn`             | ✅     | admin→/admin, security→/security             |
+| Recuperar contraseña         | `forgot-password` + `reset-password`              | ✅     | Supabase recovery, probado en vivo           |
 | Middleware auth              | `src/middleware.ts`                               | ✅     | Protege /dashboard, /admin, /security |
 | Role-based access            | `src/app/admin/layout.tsx`, `security/layout.tsx` | ✅     | Server Components verifican rol       |
 
@@ -23,8 +25,10 @@
 | Validación solapamiento BD | `schema.sql` + `actions.ts`                               | ✅     | Constraint `no_overlap` (EXCLUDE gist)             |
 | Validaciones negocio       | `actions.ts`                                              | ✅     | Max 2/semana, 2h-30d, max 4h                       |
 | Crear reserva              | `src/app/api/reservations/create/route.ts`                | ✅     | Server Action `createReservation`                  |
-| Ver mis reservas           | `src/app/(dashboard)/dashboard/reservations/page.tsx`     | ✅     | Cancelar pendientes                                |
-| Nueva reserva UI           | `src/app/(dashboard)/dashboard/reservations/new/page.tsx` | ✅     | 3 pasos: área, fecha, hora                         |
+| Ver mis reservas           | `src/app/(dashboard)/dashboard/reservations/page.tsx`     | ✅     | Cancelar (ventana 4h UI+servidor)              |
+| Nueva reserva UI           | `src/app/(dashboard)/dashboard/reservations/new/page.tsx` | ✅     | 3 pasos: área, fecha, hora                     |
+| Ventana cancelación 4h     | `src/lib/reservation-rules.ts` (+6 unit tests)            | ✅     | Regla IDEA antes sin implementar               |
+| No-show automático         | Cron diario integrado a reminders                         | ✅     | Plan Vercel admite 1 solo job                  |
 
 ### 👑 Admin Panel
 
@@ -33,7 +37,8 @@
 | Dashboard métricas | `src/app/admin/page.tsx`                                    | ✅                          |
 | CRUD Áreas comunes | `src/app/admin/areas/page.tsx`                              | ✅                          |
 | CRUD Horarios      | `src/app/admin/schedules/page.tsx`                          | ✅                          |
-| Gestión usuarios   | `src/app/admin/users/page.tsx`                              | ✅ (CRUD pendiente botones) |
+| Gestión usuarios   | `src/app/admin/users/page.tsx`                              | ✅                          |
+| Buscar/invitar/rol/borrar | `src/app/admin/actions.ts` + `user-actions.tsx`        | ✅ (guards anti auto-bloqueo) |
 | Gestión reservas   | `src/app/admin/reservations/page.tsx`                       | ✅                          |
 | Aprobar/Rechazar   | `src/app/admin/actions/approve/route.ts`, `reject/route.ts` | ✅                          |
 
@@ -43,28 +48,31 @@
 | --------------------------------------- | ---------------------------- | ------ |
 | Dashboard hoy                           | `src/app/security/page.tsx`  | ✅     |
 | Check-in / Check-out                    | Server Actions en `page.tsx` | ✅     |
-| No-show                                 | Server Action `markNoShow`   | ✅     |
+| No-show                                 | Manual + cron automático     | ✅     |
+| Buscar por código (QR/email)            | `?code=` filtra lista de hoy | ✅     |
+| Realtime auto-refresh                   | `useRealtimeRefresh` en 3 layouts | ✅ |
 | Estados: pendiente/dentro/salió/no-show | ✅                           |        |
 | Datos perfil (tel, email) en cards      | ✅                           |        |
 
 ### 📧 Notificaciones
 
-| Feature                    | Archivo                               | Estado |
-| -------------------------- | ------------------------------------- | ------ |
-| Email confirmación reserva | `src/lib/emails.ts`                   | ✅     |
-| Email aprobación           | `src/lib/emails.ts`                   | ✅     |
-| Email rechazo              | `src/lib/emails.ts`                   | ✅     |
-| Recordatorio 24h (cron)    | `src/app/api/cron/reminders/route.ts` | ✅     |
-| Templates HTML             | `src/lib/emails.ts`                   | ✅     |
+| Feature                    | Archivo                               | Estado                 |
+| -------------------------- | ------------------------------------- | ---------------------- |
+| Email confirmación reserva | `src/lib/emails.ts` (SMTP/Gmail)      | ✅ probado en vivo     |
+| Email aprobación (+QR)     | `src/lib/emails.ts` + `qrcode`        | ✅ probado en vivo     |
+| Email rechazo              | `src/lib/emails.ts`                   | ✅                     |
+| Recordatorio 24h (cron)    | `src/app/api/cron/reminders/route.ts` | ✅ código (falta ver disparo real) |
+| Proveedor dual SMTP/Resend | `getEmailProvider` (+21 unit tests)   | ✅                     |
+| Templates HTML             | `src/lib/emails.ts`                   | ✅ XSS escapado        |
 
 ### 🛡️ Seguridad RLS
 
-| Tabla                  | Policy                                         | Estado |
-| ---------------------- | ---------------------------------------------- | ------ |
-| profiles               | Users view own, Admins all, Security view      | ✅     |
-| reservations           | Users own, Admins all, Security today/check-in | ✅     |
-| common_areas           | Public view active, Admins manage              | ✅     |
-| availability_schedules | Public view, Admins manage, Security view      | ✅     |
+| Tabla                  | Policy                                                            | Estado |
+| ---------------------- | ----------------------------------------------------------------- | ------ |
+| profiles               | Solo propio por RLS; paneles leen vía service-role (tras rol)     | ✅     |
+| reservations           | Propias; admin todas; security 0 por RLS → service-role en panel  | ✅     |
+| common_areas           | Lectura autenticada OK; admin gestiona                            | ✅     |
+| availability_schedules | Lectura OK; admin gestiona                                        | ✅     |
 
 ---
 
@@ -91,28 +99,27 @@
 
 | Feature                | Prioridad | Estimación | Notas                          |
 | ---------------------- | --------- | ---------- | ------------------------------ |
-| QR codes en emails     | 🟡 Media  | 1 día      | `qrcode` lib + check-in rápido |
+| QR codes en emails     | 🟡 Media  | 1 día      | ✅ en aprobada (`qrcode`)  |
 | Push notifications     | 🔴 Alta   | 2 días     | Web Push API + VAPID           |
 | Dark mode toggle       | 🟢 Baja   | 0.5 día    | Theme provider + localStorage  |
 | Pull-to-refresh mobile | 🟢 Baja   | 0.5 día    | Pull-to-refresh en listas      |
 
 ### 🧪 Testing
 
-| Feature                                | Prioridad | Estimación | Estado                   |
-| -------------------------------------- | --------- | ---------- | ------------------------ |
-| Playwright E2E: Auth flow              | 🔴 Alta   | 1 día      | ✅ Parcial (7/7 passing) |
-| Playwright E2E: Flujo reserva completa | 🔴 Alta   | 1 día      | 🟢 Pendiente             |
-| Playwright E2E: Admin approve/reject   | 🔴 Alta   | 1 día      | 🟢 Pendiente             |
-| Playwright E2E: Security check-in/out  | 🔴 Alta   | 1 día      | 🟢 Pendiente             |
-| Unit Tests (Vitest): Zod validations   | 🟡 Media  | 1 día      | 🟢 Pendiente             |
-| Unit Tests: Utils (date-fns, cn)       | 🟢 Baja   | 0.5 día    | 🟢 Pendiente             |
-| Coverage mínimo 70%                    | 🟡 Media  | -          | 🟢 Pendiente             |
+| Feature                                | Prioridad | Estimación | Estado                        |
+| -------------------------------------- | --------- | ---------- | ----------------------------- |
+| Playwright E2E: Auth flow              | 🔴 Alta   | 1 día      | ✅ 18/18 (roles, recovery, UI) |
+| Playwright E2E: Flujo reserva completa | 🔴 Alta   | 1 día      | ✅ probado (crear→aprobar)     |
+| Playwright E2E: Admin approve/reject   | 🔴 Alta   | 1 día      | ✅ probado                     |
+| Playwright E2E: Security check-in/out  | 🔴 Alta   | 1 día      | ✅ probado                     |
+| Unit Tests (Vitest)                    | 🟡 Media  | 1 día      | ✅ 27+ (redirect, emails, reglas) |
+| Coverage mínimo 70%                    | 🟡 Media  | -          | 🟢 Pendiente medir             |
 
 ### 🔔 Notificaciones Avanzadas
 
 | Feature                     | Prioridad | Estimación | Notas                          |
 | --------------------------- | --------- | ---------- | ------------------------------ |
-| QR codes en emails          | 🟡 Media  | 1 día      | `qrcode` lib + check-in rápido |
+| QR codes en emails          | 🟡 Media  | 1 día      | ✅ hecho                   |
 | Push notifications Web Push | 🔴 Alta   | 2 días     | VAPID keys + Service Worker    |
 | SMS notifications (Twilio)  | 🟢 Baja   | 1 día      | Opcional                       |
 | In-app notifications center | 🟡 Media  | 1 día      | Toast + notification center    |
@@ -121,9 +128,9 @@
 
 | Feature                                 | Prioridad | Estimación | Estado                     |
 | --------------------------------------- | --------- | ---------- | -------------------------- |
-| Cambiar rol usuario (botón funcional)   | 🟡 Media  | 0.5 día    | 🟢 Pendiente (placeholder) |
-| Eliminar usuario (botón funcional)      | 🟡 Media  | 0.5 día    | 🟢 Pendiente (placeholder) |
-| Reportes/Exportar CSV                   | 🟢 Baja   | 1 día      | Exportar reservas/usuarios |
+| Cambiar rol usuario (botón funcional)   | 🟡 Media  | 0.5 día    | ✅ hecho (con guards)      |
+| Eliminar usuario (botón funcional)      | 🟡 Media  | 0.5 día    | ✅ hecho                   |
+| Reportes/Exportar CSV                   | 🟢 Baja   | 1 día      | ✅ reservas (con filtros)  |
 | Analytics dashboard                     | 🟢 Baja   | 2 días     | Gráficas uso/ocupación     |
 | Configuración global (rate limits, etc) | 🟢 Baja   | 1 día      | Settings panel             |
 
@@ -133,7 +140,7 @@
 | ------------------------------- | --------- | ---------- | -------------------------------- |
 | PWA Service Worker              | 🟡 Media  | 1 día      | Workbox + next-pwa               |
 | Background sync reservas        | 🔴 Alta   | 2 días     | IndexedDB + Sync API             |
-| Sentry error tracking           | 🟡 Media  | 0.5 día    | DSN + `@sentry/nextjs`           |
+| Sentry error tracking           | 🟡 Media  | 0.5 día    | ✅ código + DSN (falta ver 1er evento real) |
 | CI/CD Pipeline (GitHub Actions) | 🟡 Media  | 1 día      | Lint + Typecheck + Test + Deploy |
 | Preview deployments (Vercel)    | 🟢 Baja   | -          | ✅ Auto (Vercel)                 |
 | Database migrations versionadas | 🟡 Media  | 1 día      | Supabase CLI migrations          |
@@ -208,3 +215,44 @@
 - [ ] Índices compuestos para queries frecuentes
 - [ ] Partitioning reservations por fecha (si escala)
 - [ ] Materialized views para dashboard admin
+
+---
+
+## 📋 COMPARATIVA 2026-09-17: Proyecto vs guia-onboarding-mvp.md vs reto-hackaton-reservas.pdf
+
+### 1. Vs Guía Onboarding — ✅ 90% alineado
+- [x] Stack: Next.js App Router + TS strict + Tailwind + shadcn/ui + Supabase Auth + Zod/RHF + ESLint/Prettier/Husky + Vercel + Sentry
+- [x] Metodología: main←develop←feat/fix, commits convencionales, PRs con closes #, decisiones David
+- [ ] Gap menor: convención `feat/` vs `feature/` guía; `guia-onboarding-mvp.md` y `*.pdf` ignorados en `.gitignore`
+
+### 2. Vs Reto Hackatón (coworking salas) — ⚠️ No entregable hoy
+Dominio distinto: reto=sala coworking San José / proyecto=áreas condominio.
+
+Funcional:
+- [x] M1 ver áreas activas, M3 crear reserva, A2-A4 CRUD/desactivar
+- [ ] M4 próximas/pasadas separadas + M6 contador semanal visible
+- [ ] M5/A6 cancelar con regla RN-07 (2h) + motivo admin (`cancelReservationAction` solo pending sin tiempo)
+
+Reglas RN01-RN10:
+- [x] RN01 no-solape (EXCLUDE gist + 23P01) + RN08 cancelada libera
+- [ ] RN02 bloques 30min (validar alineación inicio)
+- [ ] RN03 duración 1-3h (hoy max 4h, sin mínimo)
+- [ ] RN04 horario fijo 07:00-21:00 (hoy schedules dinámicos)
+- [ ] RN05 30min anticipación (hoy 2h)
+- [ ] RN06 max 3/semana (hoy 2/semana)
+- [ ] RN09 bloquear reserva en sala desactivada (`is_active`)
+- [ ] RN10 timezone America/Costa_Rica (date-fns-tz)
+- [ ] D1-D5 documentar en DECISIONES.md (descalificatorio si falta)
+
+Técnico/Seguridad/Git:
+- [ ] RLS: separar políticas por operación (hoy `FOR ALL` admin) + mover `migration_fix_trigger.sql` a `supabase/migrations/`
+- [ ] Generar `src/types/database.ts` (`supabase gen types`)
+- [ ] Proteger `main` (hoy commits directos `e08318a/eb417bb`) + agregar `.github/workflows/ci.yml` (tsc/eslint/build)
+- [ ] Crear `.env.example` (hoy solo `.env.local`)
+
+Entregables reto:
+- [ ] `DECISIONES.md` (D1-D5 + formato Fecha/Opciones/Decisión/Por qué/Sacrificio)
+- [ ] `SEGURIDAD.md` (cada policy RLS + ataque que bloquea)
+- [ ] `scripts/seed.ts` (3 salas, 2 miembros, 1 admin, 10 reservas)
+- [ ] `scripts/concurrencia.ts` (10 req simultáneas, esperado=1) + pegar salida en README
+- [ ] README: setup desde cero + diagrama datos + qué funciona/fuera + link Vercel

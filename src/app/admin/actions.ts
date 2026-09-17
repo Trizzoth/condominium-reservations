@@ -114,3 +114,47 @@ export async function deleteUser(userId: string) {
   revalidatePath("/admin/users");
   return { success: "Usuario eliminado" };
 }
+
+const cancelSchema = z.object({
+  reservationId: z.string().uuid("Reserva inválida"),
+  motivo: z.string().max(280).optional(),
+});
+
+/** A6: el admin cancela la reserva de cualquier usuario indicando motivo. */
+export async function adminCancelReservation(formData: FormData) {
+  const auth = await requireAdmin();
+  if ("error" in auth) return { error: auth.error };
+
+  const validated = cancelSchema.safeParse({
+    reservationId: formData.get("reservationId"),
+    motivo: formData.get("motivo") || undefined,
+  });
+  if (!validated.success) {
+    return { error: validated.error.flatten().fieldErrors };
+  }
+
+  const admin = createAdminClient();
+  const { data: reservation, error: fetchError } = await admin
+    .from("reservations")
+    .select("id, status")
+    .eq("id", validated.data.reservationId)
+    .single();
+  if (fetchError || !reservation) return { error: "Reserva no encontrada" };
+  if (reservation.status !== "pending" && reservation.status !== "approved") {
+    return { error: "Solo se pueden cancelar reservas pendientes o aprobadas" };
+  }
+
+  const { error } = await admin
+    .from("reservations")
+    .update({
+      status: "cancelled",
+      admin_notes: validated.data.motivo || "Cancelada por administración",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", validated.data.reservationId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/reservations");
+  revalidatePath("/admin");
+  return { success: "Reserva cancelada" };
+}

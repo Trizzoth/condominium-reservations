@@ -21,6 +21,30 @@ export default async function DashboardPage() {
     .order("start_time", { ascending: false });
   const { data: areas } = await supabase.from("common_areas").select("*").eq("is_active", true);
 
+  // M5/M6: cuántas le quedan esta semana (domingo a sábado, como en validación).
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  const weekActive = (reservations || []).filter(
+    (r) =>
+      (r.status === "pending" || r.status === "approved") &&
+      new Date(r.start_time) >= weekStart &&
+      new Date(r.start_time) <= weekEnd,
+  );
+  const remaining = Math.max(0, 2 - weekActive.length);
+
+  // M4: próximas y pasadas separadas.
+  const upcoming = (reservations || [])
+    .filter((r) => new Date(r.start_time) >= now)
+    .sort((a, b) => +new Date(a.start_time) - +new Date(b.start_time));
+  const past = (reservations || [])
+    .filter((r) => new Date(r.start_time) < now)
+    .sort((a, b) => +new Date(b.start_time) - +new Date(a.start_time));
+
   return (
     <div className="space-y-8">
       <div>
@@ -28,7 +52,9 @@ export default async function DashboardPage() {
           Bienvenido, {profile?.full_name || user.email}
         </h1>
         <p className="text-muted-foreground mt-1">
-          Apartamento · {profile?.apartment || "Sin asignar"}
+          Apartamento · {profile?.apartment || "Sin asignar"} · Te{" "}
+          {remaining === 1 ? "queda 1 reserva" : `quedan ${remaining} reservas`} esta
+          semana
         </p>
       </div>
 
@@ -91,52 +117,8 @@ export default async function DashboardPage() {
             </Link>
           </Button>
         </div>
-        <div className="space-y-3">
-          {reservations && reservations.length > 0 ? (
-            reservations.slice(0, 5).map((reservation) => (
-              <Card key={reservation.id}>
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Calendar className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{reservation.common_areas?.name || "Área"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(reservation.start_time).toLocaleString("es-ES", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}{" "}
-                          -{" "}
-                          {new Date(reservation.end_time).toLocaleTimeString("es-ES", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        reservation.status === "approved"
-                          ? "bg-green-100 text-green-800"
-                          : reservation.status === "pending"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : reservation.status === "rejected"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {reservation.status}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
+        <div className="space-y-6">
+          {upcoming.length === 0 && past.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center">
                 <p className="text-muted-foreground">No tienes reservas aún</p>
@@ -145,6 +127,65 @@ export default async function DashboardPage() {
                 </Button>
               </CardContent>
             </Card>
+          ) : (
+            [
+              { title: "Próximas", items: upcoming },
+              { title: "Anteriores", items: past },
+            ].map(
+              (section) =>
+                section.items.length > 0 && (
+                  <div key={section.title} className="space-y-3">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      {section.title}
+                    </h3>
+                    {section.items.slice(0, 5).map((reservation) => (
+                      <Card key={reservation.id}>
+                        <CardContent className="py-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <Calendar className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">
+                                  {reservation.common_areas?.name || "Área"}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {new Date(reservation.start_time).toLocaleString("es-ES", {
+                                    weekday: "short",
+                                    day: "numeric",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}{" "}
+                                  -{" "}
+                                  {new Date(reservation.end_time).toLocaleTimeString("es-ES", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                reservation.status === "approved"
+                                  ? "bg-green-100 text-green-800"
+                                  : reservation.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : reservation.status === "rejected"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {reservation.status}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ),
+            )
           )}
         </div>
       </div>
