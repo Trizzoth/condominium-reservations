@@ -1,7 +1,9 @@
 import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
+import { adminCancelReservation } from "../actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Calendar, Building2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
@@ -24,14 +26,19 @@ const WHEN_FILTERS = [
 export default async function AdminReservationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; when?: string }>;
+  searchParams: Promise<{ status?: string; when?: string; area?: string }>;
 }) {
   // Service-role: RLS solo deja ver el profile propio. Layout ya validó admin.
   const supabase = createAdminClient();
-  const { status = "all", when = "all" } = await searchParams;
+  const { status = "all", when = "all", area = "all" } = await searchParams;
 
   // NOTA: `profiles` no tiene columna `email` (vive en auth.users):
   // se resuelve vía Admin API con service-role (solo servidor).
+  const { data: areas } = await supabase
+    .from("common_areas")
+    .select("id, name")
+    .order("name");
+
   const { data: reservations } = await supabase
     .from("reservations")
     .select("*, common_areas(name), profiles(full_name, apartment)")
@@ -52,6 +59,7 @@ export default async function AdminReservationsPage({
     const weekEnd = endOfWeek(now);
     return reservationsWithEmail.filter((r) => {
       if (status !== "all" && r.status !== status) return false;
+      if (area !== "all" && r.common_area_id !== area) return false;
       if (when === "all") return true;
       const d = parseISO(r.start_time);
       if (when === "today") return d >= dayStart && d <= dayEnd;
@@ -60,10 +68,11 @@ export default async function AdminReservationsPage({
     });
   })();
 
-  const qs = (s: string, w: string, base = "/admin/reservations") => {
+  const qs = (s: string, w: string, a: string, base = "/admin/reservations") => {
     const p = new URLSearchParams();
     if (s !== "all") p.set("status", s);
     if (w !== "all") p.set("when", w);
+    if (a !== "all") p.set("area", a);
     const q = p.toString();
     return `${base}${q ? `?${q}` : ""}`;
   };
@@ -90,7 +99,7 @@ export default async function AdminReservationsPage({
               {STATUS_FILTERS.map((f) => (
                 <a
                   key={f.value}
-                  href={qs(f.value, when)}
+                  href={qs(f.value, when, area)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     status === f.value
                       ? "bg-primary text-primary-foreground"
@@ -105,7 +114,7 @@ export default async function AdminReservationsPage({
               {WHEN_FILTERS.map((f) => (
                 <a
                   key={f.value}
-                  href={qs(status, f.value)}
+                  href={qs(status, f.value, area)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     when === f.value
                       ? "bg-secondary text-secondary-foreground"
@@ -118,7 +127,7 @@ export default async function AdminReservationsPage({
             </div>
             <div className="flex gap-2">
               <Button variant="outline" asChild>
-                <a href={qs(status, when, "/admin/reservations/export")} download>
+                <a href={qs(status, when, area, "/admin/reservations/export")} download>
                   Exportar CSV
                 </a>
               </Button>
@@ -243,7 +252,21 @@ export default async function AdminReservationsPage({
                             </form>
                           </div>
                         )}
-                        {r.status !== "pending" && (
+                        {(r.status === "pending" || r.status === "approved") && (
+                          <form action={adminCancelReservation} className="mt-2 flex gap-1">
+                            <input type="hidden" name="reservationId" value={r.id} />
+                            <Input
+                              name="motivo"
+                              placeholder="Motivo (opcional)"
+                              className="h-8 text-xs"
+                              maxLength={280}
+                            />
+                            <Button type="submit" size="sm" variant="outline">
+                              Cancelar
+                            </Button>
+                          </form>
+                        )}
+                        {r.status !== "pending" && r.status !== "approved" && (
                           <span className="text-sm text-muted-foreground">
                             {r.admin_notes ? `Nota: ${r.admin_notes}` : "Sin acciones"}
                           </span>

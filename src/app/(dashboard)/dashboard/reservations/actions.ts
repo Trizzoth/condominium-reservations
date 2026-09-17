@@ -101,7 +101,19 @@ export async function createReservation(formData: FormData) {
     return { error: { form: ["Ese horario ya está reservado. Elige otro."] } };
   }
 
-  // 6. Check area schedule (optional - verify it's within allowed hours)
+  // 6. RN-09: el área debe existir y estar activa (también en servidor,
+  // para que no se pueda saltear por API directa).
+  const { data: area } = await supabase
+    .from("common_areas")
+    .select("id, is_active")
+    .eq("id", validated.data.commonAreaId)
+    .single();
+
+  if (!area || !area.is_active) {
+    return { error: { form: ["Esa área no está disponible"] } };
+  }
+
+  // 7. Check area schedule (optional - verify it's within allowed hours)
   const { data: schedule } = await supabase
     .from("availability_schedules")
     .select("*")
