@@ -121,3 +121,69 @@ describe("proveedor de email", () => {
     expect(resendSendMock).not.toHaveBeenCalled();
   });
 });
+
+describe("templates restantes", () => {
+  it("created incluye datos y escapa", async () => {
+    const { reservationCreatedEmail } = await import("./emails");
+    const html = reservationCreatedEmail({
+      userName: "<b>A</b>",
+      areaName: "Salón",
+      startTime: "hoy 10:00",
+      endTime: "11:00",
+      reservationId: "abc12345",
+    });
+    expect(html).toContain("Salón Comunal".slice(0, 5));
+    expect(html).toContain("abc12345");
+    expect(html).not.toContain("<b>A</b>");
+  });
+
+  it("rejected muestra motivo escapado", async () => {
+    const { reservationRejectedEmail } = await import("./emails");
+    const withNote = reservationRejectedEmail({
+      userName: "A",
+      areaName: "S",
+      startTime: "h",
+      endTime: "e",
+      adminNotes: "<script>x</script>",
+    });
+    expect(withNote).toContain("&lt;script&gt;");
+    const withoutNote = reservationRejectedEmail({
+      userName: "A",
+      areaName: "S",
+      startTime: "h",
+      endTime: "e",
+    });
+    expect(withoutNote).not.toContain("Motivo");
+  });
+
+  it("reminder incluye área y horario", async () => {
+    const { reservationReminderEmail } = await import("./emails");
+    const html = reservationReminderEmail({
+      userName: "A",
+      areaName: "Cancha",
+      startTime: "mañana 09:00",
+      endTime: "10:00",
+    });
+    expect(html).toContain("Cancha");
+    expect(html).toContain("mañana 09:00");
+  });
+});
+
+describe("sendEmail errores Resend", () => {
+  it("propaga error de la API como fallo controlado", async () => {
+    const { sendEmail } = await import("./emails");
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    resendSendMock.mockResolvedValueOnce({ data: null, error: { message: "boom" } });
+    const result = await sendEmail({ to: "b@c.com", subject: "s", html: "<p>h</p>" });
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("boom");
+  });
+
+  it("excepción de red retorna fallo controlado", async () => {
+    const { sendEmail } = await import("./emails");
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    resendSendMock.mockRejectedValueOnce(new Error("red caída"));
+    const result = await sendEmail({ to: "b@c.com", subject: "s", html: "<p>h</p>" });
+    expect(result.success).toBe(false);
+  });
+});

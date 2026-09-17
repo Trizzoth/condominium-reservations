@@ -1,10 +1,26 @@
 import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
+import {
+  approveReservationAction,
+  rejectReservationAction,
+} from "@/app/(dashboard)/dashboard/reservations/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Building2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+
+// Wrappers FormData→string para usar las Server Actions directo en <form>
+// (RULES: mutaciones con Server Actions, sin API Routes).
+async function approve(formData: FormData) {
+  "use server";
+  await approveReservationAction(String(formData.get("reservationId") ?? ""));
+}
+
+async function reject(formData: FormData) {
+  "use server";
+  await rejectReservationAction(String(formData.get("reservationId") ?? ""));
+}
 
 export default async function AdminPage() {
   // Lecturas con service-role: RLS solo deja ver el profile propio.
@@ -138,13 +154,13 @@ export default async function AdminPage() {
                       <td className="py-4 px-4">
                         {r.status === "pending" && (
                           <div className="flex gap-2">
-                            <form action="/admin/actions/approve" method="POST">
+                            <form action={approve}>
                               <input type="hidden" name="reservationId" value={r.id} />
                               <Button type="submit" size="sm" variant="default">
                                 <CheckCircle className="h-4 w-4 mr-1" /> Aprobar
                               </Button>
                             </form>
-                            <form action="/admin/actions/reject" method="POST">
+                            <form action={reject}>
                               <input type="hidden" name="reservationId" value={r.id} />
                               <Button type="submit" size="sm" variant="destructive">
                                 <XCircle className="h-4 w-4 mr-1" /> Rechazar

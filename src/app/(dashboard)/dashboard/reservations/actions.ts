@@ -12,6 +12,7 @@ import {
 import QRCode from "qrcode";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { revalidatePath } from "next/cache";
 
 const reservationSchema = z.object({
   commonAreaId: z.string().uuid(),
@@ -240,7 +241,13 @@ export async function approveReservationAction(reservationId: string) {
     });
   }
 
+  revalidateAdmin();
   return { success: "Reserva aprobada" };
+}
+
+async function revalidateAdmin() {
+  revalidatePath("/admin");
+  revalidatePath("/admin/reservations");
 }
 
 export async function rejectReservationAction(reservationId: string, adminNotes?: string) {
@@ -286,7 +293,7 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
       to: recipientEmail,
       subject: "❌ Tu reserva ha sido rechazada",
       html: reservationRejectedEmail({
-        userName: reservation.profiles.full_name || "Residente",
+        userName: reservation.profiles?.full_name || "Residente",
         areaName: reservation.common_areas?.name || "Área común",
         startTime: startFormatted,
         endTime: endFormatted,
@@ -295,5 +302,6 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
     });
   }
 
+  revalidateAdmin();
   return { success: "Reserva rechazada" };
 }
