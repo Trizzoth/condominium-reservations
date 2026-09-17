@@ -147,6 +147,36 @@ export default async function AdminReservationsPage({
                 </a>
               ))}
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <form method="GET" action="/admin/reservations" className="flex gap-2">
+                <input type="hidden" name="status" value={status} />
+                <input type="hidden" name="when" value={when} />
+                <select
+                  name="area"
+                  defaultValue={area}
+                  aria-label="Filtrar por área"
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="all">Todas las áreas</option>
+                  {(areas || []).map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+                <Button type="submit" variant="outline" size="sm">
+                  Filtrar
+                </Button>
+              </form>
+              {area !== "all" && (
+                <a
+                  href={qs(status, when, "all")}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  Quitar filtro de área
+                </a>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" asChild>
                 <a href={qs(status, when, area, "/admin/reservations/export")} download>

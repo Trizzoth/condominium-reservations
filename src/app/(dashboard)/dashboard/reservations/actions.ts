@@ -15,11 +15,7 @@ import { es } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
 import { formatInTimeZone, toZonedTime, fromZonedTime } from "date-fns-tz";
 import { startOfWeek, endOfWeek } from "date-fns";
-import { BUSINESS_TIMEZONE } from "@/lib/reservation-rules";
-
-/** Horario fijo de operación (RN-04). */
-export const OPEN_HOUR = "07:00";
-export const CLOSE_HOUR = "21:00";
+import { BUSINESS_TIMEZONE, OPEN_HOUR, CLOSE_HOUR } from "@/lib/reservation-rules";
 
 const reservationSchema = z.object({
   commonAreaId: z.string().uuid(),
