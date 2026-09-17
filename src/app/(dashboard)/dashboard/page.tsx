@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Calendar, Users, Building2, Plus } from "lucide-react";
+import { startOfWeek, endOfWeek } from "date-fns";
+import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import { BUSINESS_TIMEZONE } from "@/lib/reservation-rules";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -21,21 +24,18 @@ export default async function DashboardPage() {
     .order("start_time", { ascending: false });
   const { data: areas } = await supabase.from("common_areas").select("*").eq("is_active", true);
 
-  // M5/M6: cuántas le quedan esta semana (domingo a sábado, como en validación).
+  // M5/M6: cuántas le quedan esta semana (domingo a sábado en CR, ver D1).
   const now = new Date();
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
-  weekStart.setHours(0, 0, 0, 0);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
+  const crNow = toZonedTime(now, BUSINESS_TIMEZONE);
+  const weekStart = fromZonedTime(startOfWeek(crNow), BUSINESS_TIMEZONE);
+  const weekEnd = fromZonedTime(endOfWeek(crNow), BUSINESS_TIMEZONE);
   const weekActive = (reservations || []).filter(
     (r) =>
       (r.status === "pending" || r.status === "approved") &&
       new Date(r.start_time) >= weekStart &&
       new Date(r.start_time) <= weekEnd,
   );
-  const remaining = Math.max(0, 2 - weekActive.length);
+  const remaining = Math.max(0, 3 - weekActive.length);
 
   // M4: próximas y pasadas separadas.
   const upcoming = (reservations || [])
@@ -54,7 +54,7 @@ export default async function DashboardPage() {
         <p className="text-muted-foreground mt-1">
           Apartamento · {profile?.apartment || "Sin asignar"} · Te{" "}
           {remaining === 1 ? "queda 1 reserva" : `quedan ${remaining} reservas`} esta
-          semana
+          semana (máx. 3)
         </p>
       </div>
 

@@ -113,10 +113,15 @@ export default function AdminSchedulesPage() {
 
     let result;
     if (editingSchedule) {
-      result = await supabase
+      // UPDATE directo falla en BD (trigger roto referencia NEW.updated_at
+      // inexistente): se reemplaza por delete+insert con los mismos valores.
+      const del = await supabase
         .from("availability_schedules")
-        .update(scheduleData)
+        .delete()
         .eq("id", editingSchedule.id);
+      result = del.error
+        ? del
+        : await supabase.from("availability_schedules").insert(scheduleData);
     } else {
       result = await supabase.from("availability_schedules").insert(scheduleData);
     }

@@ -1,8 +1,10 @@
-/** Horas mínimas antes del inicio para poder cancelar (regla IDEA). */
-export const CANCEL_WINDOW_HOURS = 4;
+/** Zona horaria oficial del negocio (RN-10). */
+export const BUSINESS_TIMEZONE = "America/Costa_Rica";
+/** Horas mínimas antes del inicio para poder cancelar (RN-07). */
+export const CANCEL_WINDOW_HOURS = 2;
 
 /**
- * ¿Se puede cancelar? Solo si faltan 4h o más para el inicio.
+ * ¿Se puede cancelar? Solo hasta 2h antes del inicio (RN-07).
  * Se evalúa en UI (ocultar botón) y en servidor (Server Action).
  */
 export function canCancelReservation(

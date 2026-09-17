@@ -13,6 +13,13 @@ import QRCode from "qrcode";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
+import { formatInTimeZone, toZonedTime, fromZonedTime } from "date-fns-tz";
+import { startOfWeek, endOfWeek } from "date-fns";
+import { BUSINESS_TIMEZONE } from "@/lib/reservation-rules";
+
+/** Horario fijo de operación (RN-04). */
+export const OPEN_HOUR = "07:00";
+export const CLOSE_HOUR = "21:00";
 
 const reservationSchema = z.object({
   commonAreaId: z.string().uuid(),
@@ -40,34 +47,43 @@ export async function createReservation(formData: FormData) {
     return { error: { form: ["No autenticado"] } };
   }
 
-  // Business validations
+  // Validaciones de negocio (reto-hackaton-reservas.pdf RN-02..RN-06, RN-09).
+  // Todas en servidor; el cliente solo sugiere horarios.
   const start = new Date(validated.data.startTime);
   const end = new Date(validated.data.endTime);
   const now = new Date();
 
-  // 1. Anticipación mínima 2 horas
-  if (start.getTime() - now.getTime() < 2 * 60 * 60 * 1000) {
-    return { error: { form: ["La reserva debe hacerse con al menos 2 horas de anticipación"] } };
+  if (!(start < end)) {
+    return { error: { form: ["El fin debe ser posterior al inicio"] } };
   }
 
-  // 2. Anticipación máxima 30 días
-  if (start.getTime() - now.getTime() > 30 * 24 * 60 * 60 * 1000) {
-    return { error: { form: ["No se pueden reservar con más de 30 días de anticipación"] } };
+  // RN-02: bloques de 30 minutos (los minutos no dependen de zona horaria).
+  if (start.getUTCMinutes() % 30 !== 0 || end.getUTCMinutes() % 30 !== 0) {
+    return { error: { form: ["Las reservas son en bloques de 30 minutos (ej. 07:00, 07:30)"] } };
   }
 
-  // 3. Duración máxima 4 horas (se validará contra el horario del área)
+  // RN-05: no pasado, mínimo 30 minutos de anticipación.
+  if (start.getTime() - now.getTime() < 30 * 60 * 1000) {
+    return { error: { form: ["La reserva debe hacerse con al menos 30 minutos de anticipación"] } };
+  }
+
+  // RN-03: duración mínima 1 hora, máxima 3 horas.
   const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-  if (durationHours > 4) {
-    return { error: { form: ["La duración máxima por reserva es 4 horas"] } };
+  if (durationHours < 1 || durationHours > 3) {
+    return { error: { form: ["La duración por reserva es de 1 a 3 horas"] } };
   }
 
-  // 4. Max 2 reservas activas por semana por usuario
-  const weekStart = new Date(start);
-  weekStart.setDate(start.getDate() - start.getDay()); // Sunday
-  weekStart.setHours(0, 0, 0, 0);
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
+  // RN-04: operación 07:00-21:00 en America/Costa_Rica.
+  const startCr = formatInTimeZone(start, BUSINESS_TIMEZONE, "HH:mm");
+  const endCr = formatInTimeZone(end, BUSINESS_TIMEZONE, "HH:mm");
+  if (startCr < OPEN_HOUR || endCr > CLOSE_HOUR) {
+    return { error: { form: [`Horario de operación ${OPEN_HOUR} - ${CLOSE_HOUR}`] } };
+  }
+
+  // RN-06: máximo 3 activas por semana (domingo a sábado, ver D1).
+  const crNow = toZonedTime(now, BUSINESS_TIMEZONE);
+  const weekStart = fromZonedTime(startOfWeek(crNow), BUSINESS_TIMEZONE);
+  const weekEnd = fromZonedTime(endOfWeek(crNow), BUSINESS_TIMEZONE);
 
   const { data: userReservationsThisWeek, error: weekError } = await supabase
     .from("reservations")
@@ -81,8 +97,8 @@ export async function createReservation(formData: FormData) {
     return { error: { form: [weekError.message] } };
   }
 
-  if (userReservationsThisWeek && userReservationsThisWeek.length >= 2) {
-    return { error: { form: ["Máximo 2 reservas por semana permitidas"] } };
+  if (userReservationsThisWeek && userReservationsThisWeek.length >= 3) {
+    return { error: { form: ["Máximo 3 reservas por semana permitidas"] } };
   }
 
   // 5. Check availability (no overlap)
@@ -112,31 +128,6 @@ export async function createReservation(formData: FormData) {
 
   if (!area || !area.is_active) {
     return { error: { form: ["Esa área no está disponible"] } };
-  }
-
-  // 7. Check area schedule (optional - verify it's within allowed hours)
-  const { data: schedule } = await supabase
-    .from("availability_schedules")
-    .select("*")
-    .eq("common_area_id", validated.data.commonAreaId)
-    .eq("day_of_week", start.getDay())
-    .single();
-
-  if (schedule) {
-    const startTimeStr = format(start, "HH:mm");
-    const endTimeStr = format(end, "HH:mm");
-    if (startTimeStr < schedule.open_time || endTimeStr > schedule.close_time) {
-      return {
-        error: {
-          form: [`Horario fuera del permitido (${schedule.open_time} - ${schedule.close_time})`],
-        },
-      };
-    }
-    if (durationHours > schedule.max_duration_hours) {
-      return {
-        error: { form: [`Duración máxima para esta área: ${schedule.max_duration_hours} horas`] },
-      };
-    }
   }
 
   // Create reservation

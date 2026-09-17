@@ -39,10 +39,15 @@ const WHEN_FILTERS = [
   { value: "week", label: "Esta semana" },
 ] as const;
 
+// Wrapper void para usar como form action (las actions retornan resultado).
+async function cancelWithMotivo(formData: FormData) {
+  "use server";
+  await adminCancelReservation(formData);
+}
+
 export default async function AdminReservationsPage({
   searchParams,
 }: {
-<<<<<<< HEAD
   searchParams: Promise<{ status?: string; when?: string; area?: string }>;
 }) {
   // Service-role: RLS solo deja ver el profile propio. Layout ya validó admin.
@@ -270,7 +275,7 @@ export default async function AdminReservationsPage({
                           </div>
                         )}
                         {(r.status === "pending" || r.status === "approved") && (
-                          <form action={adminCancelReservation} className="mt-2 flex gap-1">
+                          <form action={cancelWithMotivo} className="mt-2 flex gap-1">
                             <input type="hidden" name="reservationId" value={r.id} />
                             <Input
                               name="motivo"
