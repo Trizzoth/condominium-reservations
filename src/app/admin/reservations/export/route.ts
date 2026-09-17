@@ -20,12 +20,19 @@ export async function GET(request: Request) {
   const status = searchParams.get("status");
   const when = searchParams.get("when");
 
+  const validStatuses = ["pending", "approved", "rejected", "cancelled", "no_show"] as const;
+  type Status = (typeof validStatuses)[number];
+  const statusFilter: Status | null =
+    status && (validStatuses as readonly string[]).includes(status)
+      ? (status as Status)
+      : null;
+
   const adminDb = createAdminClient();
   let query = adminDb
     .from("reservations")
     .select("*, common_areas(name), profiles(full_name, apartment)")
     .order("created_at", { ascending: false });
-  if (status && status !== "all") query = query.eq("status", status);
+  if (statusFilter) query = query.eq("status", statusFilter);
 
   const { data, error } = await query;
   if (error) return new Response(error.message, { status: 500 });
@@ -71,7 +78,7 @@ export async function GET(request: Request) {
     ]);
   }
   const csv = "﻿" + rows.map((row) => row.map(esc).join(",")).join("\n");
-  const suffix = `${status && status !== "all" ? `-${status}` : ""}${when && when !== "all" ? `-${when}` : ""}`;
+  const suffix = `${statusFilter ? `-${statusFilter}` : ""}${when && when !== "all" ? `-${when}` : ""}`;
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

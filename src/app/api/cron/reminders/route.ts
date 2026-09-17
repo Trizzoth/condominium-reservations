@@ -49,7 +49,7 @@ export async function GET(request: Request) {
   let failed = 0;
 
   if (reservations && reservations.length > 0) {
-    const emailsByUserId = await getUserEmailsByIds(reservations.map((r) => r.user_id as string));
+    const emailsByUserId = await getUserEmailsByIds(reservations.map((r) => r.user_id));
 
     for (const reservation of reservations) {
       const recipientEmail = emailsByUserId.get(reservation.user_id as string);

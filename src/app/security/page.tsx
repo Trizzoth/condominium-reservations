@@ -119,7 +119,7 @@ export default async function SecurityDashboardPage({
   });
 
   const emailsByUserId = await getUserEmailsByIds(
-    uniqueReservations.map((r) => r.user_id as string),
+    uniqueReservations.map((r) => r.user_id),
   );
 
   const statusConfig = {
@@ -158,14 +158,14 @@ export default async function SecurityDashboardPage({
     return {
       ...r,
       security_status: status,
-      resident_email: emailsByUserId.get(r.user_id as string) || null,
+      resident_email: emailsByUserId.get(r.user_id) || null,
     };
   });
 
   // Búsqueda por código (QR/email muestran el id): filtra la lista de hoy.
   const displayed = query
     ? reservationsWithStatus.filter((r) =>
-        (r.id as string).toLowerCase().startsWith(query),
+        (r.id).toLowerCase().startsWith(query),
       )
     : reservationsWithStatus;
 
@@ -301,8 +301,8 @@ export default async function SecurityDashboardPage({
                               {format(parseISO(r.start_time), "HH:mm", { locale: es })} -{" "}
                               {format(parseISO(r.end_time), "HH:mm", { locale: es })}
                             </span>
-                            <span className="text-xs font-mono" title={r.id as string}>
-                              #{(r.id as string).slice(0, 8)}
+                            <span className="text-xs font-mono" title={r.id}>
+                              #{(r.id).slice(0, 8)}
                             </span>
                           </div>
                         </div>

@@ -67,11 +67,11 @@ export default async function AdminReservationsPage({
     .order("created_at", { ascending: false });
 
   const emailsByUserId = await getUserEmailsByIds(
-    (reservations || []).map((r) => r.user_id as string),
+    (reservations || []).map((r) => r.user_id),
   );
   const reservationsWithEmail = (reservations || []).map((r) => ({
     ...r,
-    resident_email: emailsByUserId.get(r.user_id as string) || null,
+    resident_email: emailsByUserId.get(r.user_id) || null,
   }));
   const visible = (() => {
     const now = new Date();
