@@ -35,11 +35,11 @@ export default async function AdminPage() {
     .order("created_at", { ascending: false });
 
   const emailsByUserId = await getUserEmailsByIds(
-    (reservations || []).map((r) => r.user_id as string),
+    (reservations || []).map((r) => r.user_id),
   );
   const reservationsWithEmail = (reservations || []).map((r) => ({
     ...r,
-    resident_email: emailsByUserId.get(r.user_id as string) || null,
+    resident_email: emailsByUserId.get(r.user_id) || null,
   }));
 
   const { data: areas } = await supabase.from("common_areas").select("*").eq("is_active", true);

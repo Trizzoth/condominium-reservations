@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
+    "db:seed": "node scripts/seed.ts",
+    "test:concurrency": "node scripts/concurrencia.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
@@ -27,6 +29,7 @@
     "@supabase/supabase-js": "^2.116.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "date-fns-tz": "^3.2.0",
     "lucide-react": "^1.46.0",
     "next": "16.3.5",
     "nodemailer": "^10.0.10",

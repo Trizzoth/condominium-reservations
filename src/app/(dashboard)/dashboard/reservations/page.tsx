@@ -21,7 +21,7 @@ async function cancelReservation(formData: FormData) {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
   if (!currentUser) return;
-  // Defensa: verificar ventana de 4h en servidor (la UI también la aplica).
+  // Defensa: verificar ventana de 2h (RN-07) en servidor (la UI también la aplica).
   const { data: target } = await supabase
     .from("reservations")
     .select("start_time")
@@ -145,7 +145,7 @@ export default async function ReservationsPage() {
                         reservation.status === "pending" && (
                           <span
                             className="text-xs text-muted-foreground"
-                            title="Solo se puede cancelar con 4h o más de anticipación"
+                            title="Solo se puede cancelar hasta 2h antes del inicio"
                           >
                             No cancelable
                           </span>

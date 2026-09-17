@@ -1,89 +1,73 @@
 # MVP Reservas Condominio
 
-Sistema de reservas de áreas comunes para condominios. Mobile-first, multi-usuario (residentes, admins, seguridad).
+Sistema de reservas de áreas comunes: residentes reservan, admins aprueban,
+seguridad hace check-in/out. Mobile-first, español.
 
-## Stack
+**Producción:** https://condominium-reservations-gbsx.vercel.app
 
-- **Next.js 14** (App Router, Server Components)
-- **TypeScript** (strict mode)
-- **Tailwind CSS** + **shadcn/ui**
-- **Supabase** (PostgreSQL + Auth + Realtime)
-- **React Hook Form** + **Zod** (validación)
-- **pnpm** (package manager)
-
-## Estructura del proyecto
-
-```
-src/
-├── app/                    # Rutas Next.js (App Router)
-│   ├── (auth)/            # Login, Register, Callback (públicas)
-│   ├── (dashboard)/       # Rutas protegidas (residente)
-│   ├── admin/             # Panel admin (protegido)
-│   ├── api/               # Server Actions
-│   └── layout.tsx         # Layout raíz + providers
-├── components/
-│   ├── ui/                # shadcn/ui (Button, Input, Card, Dialog, etc.)
-│   ├── forms/             # Formularios reutilizables (FormField, FormInput...)
-│   └── layout/            # Header, Sidebar, etc.
-├── lib/
-│   ├── supabase/          # Cliente Supabase (server.ts, client.ts)
-│   ├── utils.ts           # Utilidades (cn = clsx + tailwind-merge)
-│   └── validations/       # Esquemas Zod
-├── hooks/                 # Custom hooks (useAuth, useReservations...)
-├── types/                 # Tipos TypeScript globales
-└── middleware.ts          # Auth middleware (protege /dashboard, /admin)
-```
-
-## Scripts
+## Levantar desde cero (probado)
 
 ```bash
-pnpm dev        # Desarrollo (localhost:3000)
-pnpm build      # Compilar producción
-pnpm start      # Servidor producción
-pnpm lint       # ESLint
-pnpm typecheck  # TypeScript check (tsc --noEmit)
+git clone https://github.com/Trizzoth/condominium-reservations.git
+cd condominium-reservations
+pnpm install
+cp .env.example .env.local   # completar con valores del dashboard Supabase
+# BD: pegar supabase/migrations/*.sql en orden en el SQL Editor de Supabase
+pnpm dev                      # http://localhost:3000
 ```
 
-## Variables de entorno
+Verificación:
 
-Crear `.env.local` en la raíz:
-
-```env
-# Supabase (obtener en Dashboard → Settings → API)
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # Solo server
+```bash
+pnpm lint && pnpm typecheck && pnpm test:unit   # sin secretos
+pnpm build                                       # dummy env en CI
+npx playwright test                              # requiere .env.local real
+node scripts/seed.ts                             # datos de prueba (SEED-*)
+node scripts/concurrencia.ts                     # prueba §4.1 del reto
 ```
 
-## Base de datos (Supabase SQL Editor)
-
-Ejecutar el schema en `MEMORY.md` (líneas 23-70). Incluye:
-
-- `profiles` - Extiende `auth.users`
-- `common_areas` - Áreas reservables
-- `reservations` - Reservas con constraint anti-solapamiento
-- `availability_schedules` - Horarios por área/día
-
-## Flujo de trabajo (Git)
+## Modelo de datos
 
 ```
-main (producción, deploy Vercel)
-  ↑ PR develop→main
-develop (integración)
-  ↑ PR feature/*→develop
-feature/xxx (trabajo individual)
+auth.users ──1:1── profiles (id, full_name, apartment, phone, role)
+common_areas (id, name, capacity, rules, is_active)
+    │ 1:N
+availability_schedules (common_area_id, day_of_week, open/close, max_hours)
+    │ 1:N                  │ 1:N
+    └──── reservations (user_id, common_area_id, start/end, status,
+                        admin_notes, checked_in/out_at)
+                        + EXCLUDE no_overlap (mismo área + rango horario,
+                          solo pending/approved) → RN-01 a nivel BD
 ```
 
-- Commits: `feat:`, `fix:`, `style:`, `docs:`, `chore:`
-- PR requiere 1 aprobación mínima
-- Nunca push directo a `main` ni `develop`
+Roles: `resident` (reserva) · `admin` (aprueba/gestiona) · `security` (check-in/out).
+RLS activo en las 4 tablas, políticas por operación (ver `SEGURIDAD.md`).
 
-## Despliegue
+## Qué funciona / qué quedó fuera
 
-1. Push a `main` → Vercel deploya automático
-2. Variables de entorno en Vercel Dashboard
-3. Preview deployments en cada PR
+Funciona: auth email+magic link+recovery, reservas con calendario y reglas
+RN-02–RN-09 (ver `DECISIONES.md` D1–D5), panel admin (áreas/horarios/usuarios/
+reservas, filtros, CSV, aprobar/rechazar/cancelar), panel seguridad
+(check-in/out/no-show/búsqueda por código), emails SMTP (confirmación,
+aprobación con QR, recordatorio 24h), cron no-show, realtime, PWA instalable,
+Sentry, Vitest + Playwright en verde.
 
-## Próximos pasos (Issues)
+Fuera por alcance: pagos, multi-condominio, app nativa, reportes BI,
+incidencias de seguridad, reglas configurables por área, offline total,
+push notifications. Detalle en `FEATURES.md`.
 
-Ver [GitHub Issues](https://github.com/Trizzoth/miproyecto-reservas/issues)
+## Prueba de concurrencia (§4.1 del reto)
+
+```
+$ node scripts/concurrencia.ts
+intentos=10 exitosas=1 fallidas=9
+codigos_fallo=23P01
+CONCURRENCIA OK: exactamente 1 ganó, 9 rechazadas por EXCLUDE
+```
+
+## Docs
+
+- `DECISIONES.md` — D1–D5 + decisiones técnicas (formato Fecha/Opciones/Decisión/Por qué/Sacrificio)
+- `SEGURIDAD.md` — cada policy RLS + ataque que bloquea
+- `guia-onboarding-mvp.md` — stack y metodología del equipo
+- `RULES.md` / `MEMORY.md` / `FEATURES.md` / `CHANGELOG.md` — reglas, memoria, alcance, historial

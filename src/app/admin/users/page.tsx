@@ -36,10 +36,10 @@ export default async function AdminUsersPage({
     .select("*")
     .order("created_at", { ascending: false });
 
-  const emailsByUserId = await getUserEmailsByIds((profiles || []).map((p) => p.id as string));
+  const emailsByUserId = await getUserEmailsByIds((profiles || []).map((p) => p.id));
   const query = q.trim().toLowerCase();
   const filtered = (profiles || [])
-    .map((p) => ({ ...p, email: emailsByUserId.get(p.id as string) || null }))
+    .map((p) => ({ ...p, email: emailsByUserId.get(p.id) || null }))
     .filter((p) => {
       if (role !== "all" && p.role !== role) return false;
       if (!query) return true;
@@ -162,7 +162,7 @@ export default async function AdminUsersPage({
                           <p className="text-xs text-muted-foreground">
                             {p.full_name && p.email
                               ? p.email
-                              : `${(p.id as string).slice(0, 8)}...`}
+                              : `${(p.id).slice(0, 8)}...`}
                           </p>
                         </div>
                       </td>
@@ -180,11 +180,11 @@ export default async function AdminUsersPage({
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
                           <RoleSelect
-                            userId={p.id as string}
+                            userId={p.id}
                             currentRole={p.role}
                             disabled={!!isSelf}
                           />
-                          <DeleteUserButton userId={p.id as string} disabled={!!isSelf} />
+                          <DeleteUserButton userId={p.id} disabled={!!isSelf} />
                         </div>
                       </td>
                     </tr>

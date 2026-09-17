@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 
 /**
  * Cliente Supabase con service-role key (bypass RLS).
@@ -16,7 +17,7 @@ export function createAdminClient() {
     );
   }
 
-  return createClient(url, serviceRoleKey, {
+  return createClient<Database>(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, Building2, Loader2 } from "lucide-react";
+import { Plus, Edit, Building2, Loader2 } from "lucide-react";
 
 interface Area {
   id: string;
@@ -140,14 +140,24 @@ export default function AdminAreasPage() {
     Object.assign(formState, state);
   };
 
-  const deleteArea = async (id: string) => {
-    if (!confirm("¿Eliminar esta área? Se borrarán sus horarios y reservas.")) return;
-    const { error } = await supabase.from("common_areas").delete().eq("id", id);
-    if (error) setError(error.message);
-    else fetchAreas();
-  };
-
   const toggleActive = async (area: Area) => {
+    // A4: las áreas no se borran, se desactivan. D3: no desactivar con
+    // futuras aprobadas (se bloquea con mensaje, no se pierde nada).
+    if (area.is_active) {
+      const { count } = await supabase
+        .from("reservations")
+        .select("id", { count: "exact", head: true })
+        .eq("common_area_id", area.id)
+        .eq("status", "approved")
+        .gte("start_time", new Date().toISOString());
+      if (count && count > 0) {
+        setError(
+          `No se puede desactivar: tiene ${count} reserva(s) futura(s) aprobada(s). Cancélalas primero.`,
+        );
+        return;
+      }
+    }
+    setError(null);
     const { error } = await supabase
       .from("common_areas")
       .update({ is_active: !area.is_active })
@@ -231,14 +241,6 @@ export default function AdminAreasPage() {
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(area)}>
                         <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteArea(area.id)}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
