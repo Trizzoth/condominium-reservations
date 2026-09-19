@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
 import { Calendar, Clock, AlertCircle, CheckCircle, Loader2, CalendarDays } from "lucide-react";
 import { format, startOfDay, addDays } from "date-fns";
 import { es } from "date-fns/locale";
+import { es as esDayPicker } from "react-day-picker/locale";
 import { createBrowserClient } from "@supabase/ssr";
 import { createReservation } from "../actions";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -46,6 +47,11 @@ export default function NewReservationPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  const scrollToResult = () => {
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+  };
 
   const supabase = useMemo(
     () =>
@@ -186,12 +192,14 @@ export default function NewReservationPage() {
 
     if (!selectedArea || !selectedDate || !selectedStartTime || !selectedEndTime) {
       setError("Selecciona área, fecha y hora");
+      scrollToResult();
       return;
     }
 
     const available = await checkAvailability(selectedDate, selectedStartTime, selectedEndTime);
     if (!available) {
       setError("Ese horario ya está reservado. Elige otro.");
+      scrollToResult();
       return;
     }
 
@@ -216,13 +224,39 @@ export default function NewReservationPage() {
     if (result.error) {
       const err = result.error as { form?: string[] };
       setError(err.form?.[0] || "Error al crear reserva");
+      scrollToResult();
     } else {
       setSuccess("Reserva enviada. Espera aprobación del admin.");
+      scrollToResult();
       setTimeout(() => router.push("/dashboard/reservations"), 2000);
     }
   };
 
   const timeSlots = selectedArea && selectedDate ? getTimeSlots(selectedDate) : [];
+
+  // Reglas visibles (RN-03 1-3h, RN-04 07:00-21:00): lo inválido ni se ofrece.
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const startMin = selectedStartTime ? toMin(selectedStartTime) : null;
+  const validStartSlots = timeSlots.filter((slot) => {
+    // Cabe mínimo 1h antes del cierre operativo.
+    return toMin(slot.time) + 60 <= toMin("21:00");
+  });
+  const validEndSlots =
+    startMin === null
+      ? []
+      : timeSlots.filter((slot) => {
+          const m = toMin(slot.time);
+          const dur = m - startMin;
+          return m > startMin && dur >= 60 && dur <= 180 && slot.time <= "21:00";
+        });
+
+  const handleStartChange = (v: string) => {
+    setSelectedStartTime(v);
+    setSelectedEndTime("");
+  };
 
   const formatDuration = (start: string, end: string) => {
     const startDate = new Date(`2000-01-01T${start}`);
@@ -252,17 +286,6 @@ export default function NewReservationPage() {
         </Card>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" /> {error}
-            </div>
-          )}
-          {success && (
-            <div className="p-3 rounded-md bg-green-100 text-green-800 text-sm flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" /> {success}
-            </div>
-          )}
-
           {/* Step 1: Select Area */}
           <Card>
             <CardHeader>
@@ -337,6 +360,7 @@ export default function NewReservationPage() {
                     disabledDays={getDisabledDates()}
                     unavailableDays={getUnavailableDates()}
                     disableUnavailable={true}
+                    locale={esDayPicker}
                   />
                   {selectedDate && (
                     <p className="mt-3 text-sm text-muted-foreground">
@@ -378,35 +402,14 @@ export default function NewReservationPage() {
                 ) : (
                   <>
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Hora inicio</Label>
-                        <Select value={selectedStartTime} onValueChange={setSelectedStartTime}>
-                          <SelectTrigger className="w-full mt-1">
-                            <SelectValue placeholder="Hora inicio" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {timeSlots.map((slot) => (
-                              <SelectItem
-                                key={slot.time}
-                                value={slot.time}
-                                disabled={!slot.available}
-                              >
-                                {slot.time}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Hora fin</Label>
-                        <Select value={selectedEndTime} onValueChange={setSelectedEndTime}>
-                          <SelectTrigger className="w-full mt-1">
-                            <SelectValue placeholder="Hora fin" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {timeSlots
-                              .filter((slot) => slot.time > selectedStartTime)
-                              .map((slot) => (
+                        <div>
+                          <Label>Hora inicio</Label>
+                          <Select value={selectedStartTime} onValueChange={handleStartChange}>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="Hora inicio" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {validStartSlots.map((slot) => (
                                 <SelectItem
                                   key={slot.time}
                                   value={slot.time}
@@ -415,17 +418,40 @@ export default function NewReservationPage() {
                                   {slot.time}
                                 </SelectItem>
                               ))}
-                          </SelectContent>
-                        </Select>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Hora fin</Label>
+                          <Select
+                            value={selectedEndTime}
+                            onValueChange={setSelectedEndTime}
+                            disabled={!selectedStartTime}
+                          >
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder={selectedStartTime ? "Hora fin" : "Elige inicio primero"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {validEndSlots.map((slot) => (
+                                <SelectItem
+                                  key={slot.time}
+                                  value={slot.time}
+                                  disabled={!slot.available}
+                                >
+                                  {slot.time}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                    </div>
 
-                    {selectedStartTime && selectedEndTime && (
-                      <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                        <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
-                        <p className="text-muted-foreground">
-                          Máx. {schedules[selectedDate.getDay()]?.maxDuration || 4} horas
-                        </p>
+                      {selectedStartTime && selectedEndTime && (
+                        <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
+                          <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
+                          <p className="text-muted-foreground">
+                            Reservas de 1 a 3 horas, entre 07:00 y 21:00
+                          </p>
                         {checkingAvailability && (
                           <p className="text-primary mt-1 flex items-center gap-1">
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -434,13 +460,33 @@ export default function NewReservationPage() {
                         )}
                       </div>
                     )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                      {selectedStartTime && !selectedEndTime && validEndSlots.length === 0 && (
+                        <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 rounded-lg text-sm">
+                          Con esa hora de inicio no hay fin válido (1 a 3 horas dentro de
+                          07:00–21:00). Elige otro inicio.
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Submit */}
+            {/* Resultado junto a la acción (visible en móvil sin subir) */}
+            <div ref={resultRef} className="space-y-3 scroll-mt-4">
+              {error && (
+                <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" /> {error}
+                </div>
+              )}
+              {success && (
+                <div className="p-3 rounded-md bg-green-100 text-green-800 text-sm flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 shrink-0" /> {success}
+                </div>
+              )}
+            </div>
+
+            {/* Submit */}
           <Button
             type="submit"
             className="w-full"
