@@ -33,6 +33,37 @@ export function getEmailFrom(): string {
   return process.env.RESEND_FROM_EMAIL || "Reservas Condominio <onboarding@resend.dev>";
 }
 
+/** Dirección cruda del remitente (para headers mailto). */
+export function getEmailAddress(): string {
+  const from =
+    process.env.SMTP_FROM || process.env.SMTP_USER || process.env.RESEND_FROM_EMAIL || "";
+  const m = from.match(/<([^>]+)>/);
+  return m ? m[1] : from;
+}
+
+/**
+ * Versión texto plano del HTML (los filtros spam penalizan el solo-HTML).
+ * Conversión simple sin dependencias: bloques a saltos de línea + entidades.
+ */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<\/(p|div|tr|table|h\d|li|ul|ol|br)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n");
+}
+
 /**
  * Escapa caracteres HTML para prevenir XSS en los templates de email.
  * Los valores interpolados (nombres, notas del admin) pueden contener
@@ -65,7 +96,19 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
         secure: process.env.SMTP_SECURE !== "false",
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       });
-      const info = await transporter.sendMail({ from: getEmailFrom(), to, subject, html });
+      const info = await transporter.sendMail({
+        from: getEmailFrom(),
+        to,
+        subject,
+        text: htmlToText(html),
+        html,
+        list: {
+          unsubscribe: {
+            url: `mailto:${getEmailAddress()}?subject=baja`,
+            comment: "Darse de baja de avisos de reservas",
+          },
+        },
+      });
       return { success: true, data: { id: info.messageId } };
     } catch (err) {
       console.error("SMTP send failed:", err);
@@ -84,7 +127,11 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
       from: getEmailFrom(),
       to,
       subject,
+      text: htmlToText(html),
       html,
+      headers: {
+        "List-Unsubscribe": `<mailto:${getEmailAddress()}?subject=baja>`,
+      },
     });
 
     if (error) {
