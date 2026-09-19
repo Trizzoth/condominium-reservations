@@ -187,3 +187,32 @@ describe("sendEmail errores Resend", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe("deliverability", () => {
+  it("htmlToText convierte bloques y entidades", async () => {
+    const { htmlToText } = await import("./emails");
+    expect(htmlToText("<h1>Hola</h1><p>Mundo &amp; <b>todos</b></p>")).toBe("Hola\nMundo & todos");
+    expect(htmlToText("<p>A</p><p>B</p>")).toBe("A\nB");
+  });
+
+  it("smtp incluye texto y List-Unsubscribe", async () => {
+    const { sendEmail } = await import("./emails");
+    vi.stubEnv("SMTP_HOST", "smtp.gmail.com");
+    vi.stubEnv("SMTP_USER", "a@gmail.com");
+    vi.stubEnv("SMTP_PASS", "xxxx");
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    await sendEmail({ to: "b@c.com", subject: "s", html: "<p>Hola</p>" });
+    const args = smtpSendMock.mock.calls[0][0];
+    expect(args.text).toContain("Hola");
+    expect(args.list.unsubscribe.url).toContain("mailto:a@gmail.com");
+  });
+
+  it("resend incluye texto y header List-Unsubscribe", async () => {
+    const { sendEmail } = await import("./emails");
+    vi.stubEnv("RESEND_API_KEY", "re_test");
+    await sendEmail({ to: "b@c.com", subject: "s", html: "<p>Hola</p>" });
+    const args = resendSendMock.mock.calls[0][0];
+    expect(args.text).toContain("Hola");
+    expect(args.headers["List-Unsubscribe"]).toContain("mailto:");
+  });
+});
