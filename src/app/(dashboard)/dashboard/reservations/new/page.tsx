@@ -234,23 +234,33 @@ export default function NewReservationPage() {
 
   const timeSlots = selectedArea && selectedDate ? getTimeSlots(selectedDate) : [];
 
-  // Reglas visibles (RN-03 1-3h, RN-04 07:00-21:00): lo inválido ni se ofrece.
+  // Reglas visibles (decisión David: 3–6h, 06:00–24:00): lo inválido ni se ofrece.
   const toMin = (t: string) => {
     const [h, m] = t.split(":").map(Number);
     return h * 60 + m;
   };
+  const CLOSE_MIN = toMin("24:00");
   const startMin = selectedStartTime ? toMin(selectedStartTime) : null;
   const validStartSlots = timeSlots.filter((slot) => {
-    // Cabe mínimo 1h antes del cierre operativo.
-    return toMin(slot.time) + 60 <= toMin("21:00");
+    // Cabe mínimo 3h antes del cierre operativo.
+    return toMin(slot.time) + 180 <= CLOSE_MIN;
   });
+  const endCandidates =
+    startMin === null
+      ? []
+      : [
+          ...timeSlots,
+          // Medianoche exacta como fin válido (los slots llegan a 23:30).
+          { time: "24:00", available: true },
+        ];
   const validEndSlots =
     startMin === null
       ? []
-      : timeSlots.filter((slot) => {
-          const m = toMin(slot.time);
+      : endCandidates.filter((slot) => {
+          const raw = toMin(slot.time);
+          const m = slot.time === "24:00" ? CLOSE_MIN : raw;
           const dur = m - startMin;
-          return m > startMin && dur >= 60 && dur <= 180 && slot.time <= "21:00";
+          return m > startMin && dur >= 180 && dur <= 360 && slot.available;
         });
 
   const handleStartChange = (v: string) => {
@@ -259,11 +269,9 @@ export default function NewReservationPage() {
   };
 
   const formatDuration = (start: string, end: string) => {
-    const startDate = new Date(`2000-01-01T${start}`);
-    const endDate = new Date(`2000-01-01T${end}`);
-    const diffMs = endDate.getTime() - startDate.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const diffMin = toMin(end) - toMin(start);
+    const hours = Math.floor(diffMin / 60);
+    const minutes = diffMin % 60;
     return `${hours}h ${minutes}min`;
   };
 
@@ -450,7 +458,7 @@ export default function NewReservationPage() {
                         <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
                           <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
                           <p className="text-muted-foreground">
-                            Reservas de 1 a 3 horas, entre 07:00 y 21:00
+                            Reservas de 3 a 6 horas, entre 06:00 y 24:00
                           </p>
                         {checkingAvailability && (
                           <p className="text-primary mt-1 flex items-center gap-1">
@@ -462,8 +470,8 @@ export default function NewReservationPage() {
                     )}
                       {selectedStartTime && !selectedEndTime && validEndSlots.length === 0 && (
                         <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 rounded-lg text-sm">
-                          Con esa hora de inicio no hay fin válido (1 a 3 horas dentro de
-                          07:00–21:00). Elige otro inicio.
+                          Con esa hora de inicio no hay fin válido (3 a 6 horas dentro de
+                          06:00–24:00). Elige otro inicio.
                         </div>
                       )}
                     </>

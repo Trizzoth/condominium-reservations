@@ -82,6 +82,7 @@ Formato por entrada: Fecha / Opciones / Decisión / Por qué / Sacrificio.
 
 - **Roles:** reto pide miembro/admin; el producto tiene resident/admin/security (superset, security exigido por el condominio).
 - **Reglas numéricas:** se alinearon al reto (30min bloques, 1–3h, 07:00–21:00 fijo, 30min anticipación, 3/semana, cancelar 2h, `America/Costa_Rica`). Antes: 2h/4h/2sem (idea condominio).
+- **2026-09-18 (David): duración 3–6h, horario 06:00–24:00.** Reemplaza RN-03/RN-04. Supuesto registrado: día operativo 06:00 a medianoche exacta; turnos "6–12 / 12–12" interpretados como ventana continua (NO bloques rígidos: eso requeriría confirmación explícita). UI solo ofrece fines válidos; medianoche exacta seleccionable como "24:00".
 - **Horarios por área:** la tabla `availability_schedules` sigue alimentando el calendario UI, pero el servidor impone el fijo 07:00–21:00. Si un área configura fuera de rango, el servidor manda (documentado; simplificar UI queda pendiente).
 - **Emails/QR/PWA/Sentry:** fuera del reto, exigidos por el producto. Se mantienen.
 

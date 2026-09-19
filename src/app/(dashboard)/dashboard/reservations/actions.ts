@@ -63,16 +63,22 @@ export async function createReservation(formData: FormData) {
     return { error: { form: ["La reserva debe hacerse con al menos 30 minutos de anticipación"] } };
   }
 
-  // RN-03: duración mínima 1 hora, máxima 3 horas.
+  // RN-03 (decisión David): duración mínima 3 horas, máxima 6 horas.
   const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-  if (durationHours < 1 || durationHours > 3) {
-    return { error: { form: ["La duración por reserva es de 1 a 3 horas"] } };
+  if (durationHours < 3 || durationHours > 6) {
+    return { error: { form: ["La duración por reserva es de 3 a 6 horas"] } };
   }
 
-  // RN-04: operación 07:00-21:00 en America/Costa_Rica.
+  // Horario 06:00–24:00 America/Costa_Rica ("00:00" = medianoche exacta = 24:00).
+  const toMin = (t: string) => {
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
+  };
   const startCr = formatInTimeZone(start, BUSINESS_TIMEZONE, "HH:mm");
-  const endCr = formatInTimeZone(end, BUSINESS_TIMEZONE, "HH:mm");
-  if (startCr < OPEN_HOUR || endCr > CLOSE_HOUR) {
+  const endCrRaw = formatInTimeZone(end, BUSINESS_TIMEZONE, "HH:mm");
+  const sMin = toMin(startCr);
+  const eMin = endCrRaw === "00:00" ? 1440 : toMin(endCrRaw);
+  if (sMin < toMin(OPEN_HOUR) || eMin <= sMin || eMin > toMin(CLOSE_HOUR)) {
     return { error: { form: [`Horario de operación ${OPEN_HOUR} - ${CLOSE_HOUR}`] } };
   }
 
