@@ -159,6 +159,12 @@ export default async function ReservationsPage() {
                       >
                         {config?.label}
                       </span>
+                      <Link
+                        href={`/dashboard/reservations/${reservation.id}`}
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        Ver detalle
+                      </Link>
                       {canCancel ? (
                         <form action={cancelReservation}>
                           <input type="hidden" name="reservationId" value={reservation.id} />
