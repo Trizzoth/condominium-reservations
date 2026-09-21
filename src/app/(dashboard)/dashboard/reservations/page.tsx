@@ -6,11 +6,13 @@ import { getAppSettings } from "@/lib/settings";
 import { logAudit } from "@/lib/audit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import SubmitButton from "@/components/ui/submit-button";
 import Link from "next/link";
-import { Calendar, Plus, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Calendar, Plus, Trash2, Clock, CheckCircle, XCircle, QrCode } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
+import QRCode from "qrcode";
 
 // Server Action: cancela una reserva propia en estado pendiente.
 // Se usa como `action` de un <form>, que es la forma válida de invocar
@@ -64,6 +66,21 @@ export default async function ReservationsPage() {
     .order("start_time", { ascending: false });
 
   const { cancelWindowHours } = await getAppSettings();
+
+  // QR de check-in para las aprobadas (mismo contenido que el del email:
+  // el id; seguridad lo lee con la cámara y filtra por código).
+  const qrById = new Map<string, string>();
+  await Promise.all(
+    (reservations || [])
+      .filter((r) => r.status === "approved")
+      .map(async (r) => {
+        try {
+          qrById.set(r.id, await QRCode.toDataURL(r.id, { width: 160, margin: 1 }));
+        } catch {
+          // Sin QR: la tarjeta se muestra igual.
+        }
+      }),
+  );
 
   const statusConfig = {
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -145,15 +162,15 @@ export default async function ReservationsPage() {
                       {canCancel ? (
                         <form action={cancelReservation}>
                           <input type="hidden" name="reservationId" value={reservation.id} />
-                          <Button
-                            type="submit"
+                          <SubmitButton
                             variant="ghost"
                             size="icon"
                             className="text-red-600 hover:text-red-700"
                             title="Cancelar reserva"
+                            pendingText=""
                           >
                             <Trash2 className="h-4 w-4" />
-                          </Button>
+                          </SubmitButton>
                         </form>
                       ) : (
                         reservation.status === "pending" && (
@@ -171,6 +188,24 @@ export default async function ReservationsPage() {
                     <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
                       <span className="font-medium">Nota del admin: </span>
                       {reservation.admin_notes}
+                    </div>
+                  )}
+                  {reservation.status === "approved" && qrById.get(reservation.id) && (
+                    <div className="mt-3 flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={qrById.get(reservation.id)}
+                        alt="QR de check-in"
+                        width={96}
+                        height={96}
+                        className="rounded-md border bg-white"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 font-medium text-foreground">
+                          <QrCode className="h-3 w-3" /> Muestra este QR en seguridad
+                        </span>
+                        Código #{reservation.id.slice(0, 8)}
+                      </p>
                     </div>
                   )}
                 </CardContent>

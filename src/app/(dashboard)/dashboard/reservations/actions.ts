@@ -406,15 +406,20 @@ export async function approveReservationAction(reservationId: string) {
   // Escritura con service-role: las policies Admins * exigen claim JWT
   // `role=admin` que Supabase no incluye por defecto (el update vía
   // user-client no toca filas). El rol ya se verificó arriba.
+  // Guard .eq pending: idempotencia (doble-click no duplica emails).
   const { data: reservation, error } = await createAdminClient()
     .from("reservations")
     .update({ status: "approved", updated_at: new Date().toISOString() })
     .eq("id", reservationId)
+    .eq("status", "pending")
     .select("*, common_areas(name), profiles(full_name)")
-    .single();
+    .maybeSingle();
 
   if (error) {
     return { error: error.message };
+  }
+  if (!reservation) {
+    return { error: { form: ["Esa reserva ya fue procesada"] } };
   }
 
   // Send approval email (el email vive en auth.users, no en profiles)
@@ -495,10 +500,16 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
       updated_at: new Date().toISOString(),
     })
     .eq("id", reservationId)
+    .eq("status", "pending")
     .select("*, common_areas(name), profiles(full_name)")
-    .single();
+    .maybeSingle();
 
-  if (error) return { error: error.message };
+  if (error) {
+    return { error: error.message };
+  }
+  if (!reservation) {
+    return { error: "Esa reserva ya fue procesada" };
+  }
 
   // Send rejection email (el email vive en auth.users, no en profiles)
   const emails = await getUserEmailsByIds([reservation.user_id]);

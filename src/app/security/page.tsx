@@ -21,6 +21,7 @@ import { es } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
 import QrScanner from "@/components/security/qr-scanner";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
+import SubmitButton from "@/components/ui/submit-button";
 import { logAudit } from "@/lib/audit";
 
 // wa.me gratis ($0, sin API): normaliza a E.164 sin "+".
@@ -60,7 +61,8 @@ async function checkIn(formData: FormData) {
       checked_in_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", reservationId);
+    .eq("id", reservationId)
+    .is("checked_in_at", null);
   await logAudit({ actorId: auth.userId, action: "reservation.checked_in", entityId: reservationId });
   revalidatePath("/security");
 }
@@ -76,7 +78,8 @@ async function checkOut(formData: FormData) {
       checked_out_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", reservationId);
+    .eq("id", reservationId)
+    .is("checked_out_at", null);
   await logAudit({ actorId: auth.userId, action: "reservation.checked_out", entityId: reservationId });
   revalidatePath("/security");
 }
@@ -92,7 +95,8 @@ async function markNoShow(formData: FormData) {
       status: "no_show",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", reservationId);
+    .eq("id", reservationId)
+    .neq("status", "no_show");
   await logAudit({ actorId: auth.userId, action: "reservation.no_show", entityId: reservationId });
   revalidatePath("/security");
 }
@@ -329,24 +333,30 @@ export default async function SecurityDashboardPage({
                             <div className="flex items-center gap-2">
                               <form action={checkIn}>
                                 <input type="hidden" name="reservationId" value={r.id} />
-                                <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                                <SubmitButton
+                                  className="bg-green-600 hover:bg-green-700"
+                                  pendingText="Registrando..."
+                                >
                                   <UserCheck className="mr-2 h-4 w-4" /> Entrada
-                                </Button>
+                                </SubmitButton>
                               </form>
                               <form action={markNoShow}>
                                 <input type="hidden" name="reservationId" value={r.id} />
-                                <Button type="submit" variant="destructive">
+                                <SubmitButton variant="destructive" pendingText="Registrando...">
                                   <UserX className="mr-2 h-4 w-4" /> No llegó
-                                </Button>
+                                </SubmitButton>
                               </form>
                             </div>
                           )}
                         {r.security_status === "checked_in" && (
                           <form action={checkOut}>
                             <input type="hidden" name="reservationId" value={r.id} />
-                            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                            <SubmitButton
+                              className="bg-blue-600 hover:bg-blue-700"
+                              pendingText="Registrando..."
+                            >
                               <ArrowRight className="mr-2 h-4 w-4" /> Salida
-                            </Button>
+                            </SubmitButton>
                           </form>
                         )}
                         {r.security_status === "checked_out" && (
@@ -377,9 +387,10 @@ export default async function SecurityDashboardPage({
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
+                              title={`Abrir WhatsApp con ${r.profiles?.full_name || "el residente"}`}
                               className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2 py-1 font-medium text-white hover:bg-green-700"
                             >
-                              WhatsApp
+                              WhatsApp al residente
                             </a>
                           )}
                         </div>

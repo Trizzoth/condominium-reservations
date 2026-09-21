@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import SubmitButton from '@/components/ui/submit-button';
 import { Badge } from '@/components/ui/badge';
 import { SprayCan, CheckCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -84,9 +84,9 @@ export default async function SecurityCleaningPage() {
                   </div>
                   <form action={markDone}>
                     <input type="hidden" name="id" value={t.id} />
-                    <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                    <SubmitButton className="bg-green-600 hover:bg-green-700" pendingText="Guardando...">
                       <CheckCircle className="mr-2 h-4 w-4" /> Marcar hecha
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </div>
               </CardContent>

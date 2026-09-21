@@ -22,6 +22,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Edit, Trash2, Loader2, CalendarDays } from "lucide-react";
+import { saveSchedule, deleteScheduleAction } from "./actions";
+
+const EMPTY_SCHEDULE_FORM = {
+  common_area_id: "",
+  day_of_week: "1",
+  open_time: "09:00",
+  close_time: "22:00",
+  max_duration_hours: 4,
+};
 
 const DAYS = [
   { value: 0, label: "Domingo" },
@@ -57,14 +66,8 @@ export default function AdminSchedulesPage() {
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const formState = {
-    common_area_id: "",
-    day_of_week: "1",
-    open_time: "09:00",
-    close_time: "22:00",
-    max_duration_hours: 4,
-  };
+  const [notice, setNotice] = useState<string | null>(null);
+  const [formState, setFormState] = useState({ ...EMPTY_SCHEDULE_FORM });
 
   const supabase = useMemo(
     () =>
@@ -102,37 +105,27 @@ export default function AdminSchedulesPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    setNotice(null);
 
-    const scheduleData = {
-      common_area_id: formState.common_area_id,
-      day_of_week: formState.day_of_week,
-      open_time: formState.open_time,
-      close_time: formState.close_time,
-      max_duration_hours: formState.max_duration_hours,
-    };
+    // Server Action (service-role): el browser-client no puede escribir
+    // (policies Admins * exigen claim JWT inexistente, ver #61).
+    const fd = new FormData();
+    if (editingSchedule) fd.set("id", editingSchedule.id);
+    fd.set("common_area_id", formState.common_area_id);
+    fd.set("day_of_week", formState.day_of_week);
+    fd.set("open_time", formState.open_time);
+    fd.set("close_time", formState.close_time);
+    fd.set("max_duration_hours", String(formState.max_duration_hours));
 
-    let result;
-    if (editingSchedule) {
-      // UPDATE directo falla en BD (trigger roto referencia NEW.updated_at
-      // inexistente): se reemplaza por delete+insert con los mismos valores.
-      const del = await supabase
-        .from("availability_schedules")
-        .delete()
-        .eq("id", editingSchedule.id);
-      result = del.error
-        ? del
-        : await supabase.from("availability_schedules").insert(scheduleData);
-    } else {
-      result = await supabase.from("availability_schedules").insert(scheduleData);
-    }
-
-    if (result.error) {
-      setError(result.error.message);
+    const result = await saveSchedule(fd);
+    if ("error" in result && result.error) {
+      setError(result.error);
     } else {
       setDialogOpen(false);
       setEditingSchedule(null);
       resetForm();
       fetchData();
+      setNotice("Horario guardado.");
     }
     setSubmitting(false);
   };
@@ -157,22 +150,16 @@ export default function AdminSchedulesPage() {
 
   const resetForm = () => {
     setFormState({
+      ...EMPTY_SCHEDULE_FORM,
       common_area_id: areas[0]?.id || "",
-      day_of_week: "1",
-      open_time: "09:00",
-      close_time: "22:00",
-      max_duration_hours: 4,
     });
-  };
-
-  const setFormState = (state: typeof formState) => {
-    Object.assign(formState, state);
   };
 
   const deleteSchedule = async (id: string) => {
     if (!confirm("¿Eliminar este horario?")) return;
-    const { error } = await supabase.from("availability_schedules").delete().eq("id", id);
-    if (error) setError(error.message);
+    setError(null);
+    const result = await deleteScheduleAction(id);
+    if ("error" in result && result.error) setError(result.error);
     else fetchData();
   };
 
@@ -197,6 +184,9 @@ export default function AdminSchedulesPage() {
       </div>
 
       {error && <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm">{error}</div>}
+      {notice && (
+        <div className="p-3 rounded-md bg-green-100 text-green-800 text-sm">{notice}</div>
+      )}
 
       {loading ? (
         <Card>

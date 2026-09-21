@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Edit, Building2, Loader2 } from "lucide-react";
+import { saveArea, toggleAreaActive } from "./actions";
 
 interface Area {
   id: string;
@@ -59,6 +60,7 @@ export default function AdminAreasPage() {
   const [editingArea, setEditingArea] = useState<Area | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [formState, setFormState] = useState({ ...EMPTY_FORM });
 
   const supabase = useMemo(
@@ -92,34 +94,32 @@ export default function AdminAreasPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    setNotice(null);
 
-    const areaData = {
-      name: formState.name,
-      description: formState.description,
-      capacity: formState.capacity,
-      rules: formState.rules,
-      is_active: formState.is_active,
-      min_duration_hours: formState.min_duration_hours,
-      max_duration_hours: formState.max_duration_hours,
-      open_hour: formState.open_hour,
-      close_hour: formState.close_hour,
-      max_per_week: formState.max_per_week,
-    };
+    // Server Action (service-role): el browser-client no puede escribir
+    // (policies Admins * exigen claim JWT inexistente, ver #61).
+    const fd = new FormData();
+    if (editingArea) fd.set("id", editingArea.id);
+    fd.set("name", formState.name);
+    fd.set("description", formState.description);
+    fd.set("capacity", String(formState.capacity));
+    fd.set("rules", formState.rules);
+    fd.set("is_active", String(formState.is_active));
+    fd.set("min_duration_hours", String(formState.min_duration_hours));
+    fd.set("max_duration_hours", String(formState.max_duration_hours));
+    fd.set("open_hour", formState.open_hour);
+    fd.set("close_hour", formState.close_hour);
+    fd.set("max_per_week", String(formState.max_per_week));
 
-    let result;
-    if (editingArea) {
-      result = await supabase.from("common_areas").update(areaData).eq("id", editingArea.id);
-    } else {
-      result = await supabase.from("common_areas").insert(areaData);
-    }
-
-    if (result.error) {
-      setError(result.error.message);
+    const result = await saveArea(fd);
+    if ("error" in result && result.error) {
+      setError(result.error);
     } else {
       setDialogOpen(false);
       setEditingArea(null);
       resetForm();
       fetchAreas();
+      setNotice("Área guardada. Las reservas nuevas ya usan estas reglas.");
     }
     setSubmitting(false);
   };
@@ -152,29 +152,16 @@ export default function AdminAreasPage() {
   };
 
   const toggleActive = async (area: Area) => {
-    // A4: las áreas no se borran, se desactivan. D3: no desactivar con
-    // futuras aprobadas (se bloquea con mensaje, no se pierde nada).
-    if (area.is_active) {
-      const { count } = await supabase
-        .from("reservations")
-        .select("id", { count: "exact", head: true })
-        .eq("common_area_id", area.id)
-        .eq("status", "approved")
-        .gte("start_time", new Date().toISOString());
-      if (count && count > 0) {
-        setError(
-          `No se puede desactivar: tiene ${count} reserva(s) futura(s) aprobada(s). Cancélalas primero.`,
-        );
-        return;
-      }
-    }
+    // A4: las áreas no se borran, se desactivan (el guard de futuras
+    // aprobadas vive en la Server Action con service-role).
     setError(null);
-    const { error } = await supabase
-      .from("common_areas")
-      .update({ is_active: !area.is_active })
-      .eq("id", area.id);
-    if (error) setError(error.message);
-    else fetchAreas();
+    setNotice(null);
+    const result = await toggleAreaActive(area.id);
+    if ("error" in result && result.error) setError(result.error);
+    else {
+      fetchAreas();
+      if ("success" in result && result.success) setNotice(result.success);
+    }
   };
 
   return (
@@ -190,6 +177,9 @@ export default function AdminAreasPage() {
       </div>
 
       {error && <div className="p-3 rounded-md bg-red-100 text-red-800 text-sm">{error}</div>}
+      {notice && (
+        <div className="p-3 rounded-md bg-green-100 text-green-800 text-sm">{notice}</div>
+      )}
 
       {loading ? (
         <Card>
