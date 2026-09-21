@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [avatarOk, setAvatarOk] = useState(false);
   const avatarRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -53,11 +54,12 @@ export default function ProfilePage() {
     });
   }, [form]);
 
-  /** Foto de perfil: comprime a 256px y la sube a `avatars/{userId}.jpg`. */
+  /** Foto de perfil: comprime a 256px y la sube a `avatars/{userId}/...`. */
   const handleAvatar = async (file: File | undefined) => {
     if (!file || !file.type.startsWith("image/")) return;
     setAvatarBusy(true);
     setAvatarError(null);
+    setAvatarOk(false);
     try {
       const supabase = createClient();
       const {
@@ -87,20 +89,27 @@ export default function ProfilePage() {
         };
         img.src = url;
       });
-      // Carpeta propia ({userId}/...): el upsert de una 2da foto pasa
-      // por policy UPDATE, que exige foldername = uid (ver migración).
-      const path = `${user.id}/avatar.jpg`;
+      // Nombre único por subida: evita la caché del navegador (misma URL
+      // mostraría la foto vieja) y el choque con policies de UPDATE.
+      // Carpeta propia: RLS solo deja tocar lo suyo.
+      const path = `${user.id}/avatar-${Date.now()}.jpg`;
       const { error: upError } = await supabase.storage
         .from("avatars")
-        .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+        .upload(path, blob, { contentType: "image/jpeg", upsert: false });
       if (upError) throw new Error(upError.message);
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      const publicUrl = data.publicUrl;
       const { error: metaError } = await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl },
+        data: { avatar_url: data.publicUrl },
       });
       if (metaError) throw new Error(metaError.message);
-      setAvatarUrl(publicUrl);
+      // Limpieza: borra fotos anteriores de la carpeta propia.
+      const { data: oldFiles } = await supabase.storage.from("avatars").list(user.id);
+      const stale = (oldFiles || [])
+        .map((f) => `${user.id}/${f.name}`)
+        .filter((p) => p !== path);
+      if (stale.length > 0) await supabase.storage.from("avatars").remove(stale);
+      setAvatarUrl(data.publicUrl);
+      setAvatarOk(true);
     } catch (e) {
       setAvatarError(e instanceof Error ? e.message : "No se pudo subir la foto");
     } finally {
@@ -144,7 +153,13 @@ export default function ProfilePage() {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => handleAvatar(e.target.files?.[0])}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              // Limpiar el input: si elige la MISMA foto otra vez,
+              // el change vuelve a disparar.
+              e.target.value = "";
+              void handleAvatar(f);
+            }}
           />
           <Button
             type="button"
@@ -155,6 +170,7 @@ export default function ProfilePage() {
           >
             {avatarBusy ? "Subiendo..." : "Cambiar foto"}
           </Button>
+          {avatarOk && <p className="mt-1 text-xs text-green-700">Foto actualizada ✓</p>}
           {avatarError && <p className="mt-1 text-xs text-destructive">{avatarError}</p>}
         </div>
       </div>
