@@ -53,12 +53,19 @@ describe("magicLinkSchema y forgotPasswordSchema", () => {
 describe("profileSchema", () => {
   it("acepta perfil completo y mínimo", () => {
     expect(
-      profileSchema.safeParse({ fullName: "Ana", apartment: "101", phone: "123" }).success
+      profileSchema.safeParse({ fullName: "Ana", apartment: "101", phone: "50688888888" })
+        .success
     ).toBe(true);
     expect(profileSchema.safeParse({ fullName: "Ana" }).success).toBe(true);
   });
   it("rechaza nombre vacío", () => {
     expect(profileSchema.safeParse({ fullName: "" }).success).toBe(false);
+  });
+  it("rechaza teléfono con letras y acepta vacío", () => {
+    expect(
+      profileSchema.safeParse({ fullName: "Ana", phone: "abc123" }).success
+    ).toBe(false);
+    expect(profileSchema.safeParse({ fullName: "Ana", phone: "" }).success).toBe(true);
   });
 });
 

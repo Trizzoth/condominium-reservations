@@ -17,7 +17,8 @@ import {
   FormDescription,
   FormMessage,
 } from "@/components/forms/form";
-import { Building2, Mail, Lock, User, Home, Phone, Sparkles } from "lucide-react";
+import { Building2, Mail, Lock, User, Home, Sparkles } from "lucide-react";
+import PhoneInput from "@/components/forms/phone-input";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -189,15 +190,7 @@ export default function RegisterPage() {
                     name="phone"
                     control={form.control}
                     render={({ field }) => (
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          type="tel"
-                          placeholder="+57 300 123 4567"
-                          className="pl-10"
-                          {...field}
-                        />
-                      </div>
+                      <PhoneInput value={field.value || ""} onChange={field.onChange} />
                     )}
                   />
                 </FormControl>

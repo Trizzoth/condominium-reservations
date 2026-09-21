@@ -11,10 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Search, Shield, User, Building2 } from "lucide-react";
+import { Users, Search, Shield, User, Building2, MessageCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { InviteUserForm, RoleSelect, DeleteUserButton } from "./user-actions";
+import { waLink } from "@/lib/whatsapp";
 
 export default async function AdminUsersPage({
   searchParams,
@@ -173,7 +174,28 @@ export default async function AdminUsersPage({
                         </Badge>
                       </td>
                       <td className="py-4 px-4">{p.apartment || "—"}</td>
-                      <td className="py-4 px-4">{p.phone || "—"}</td>
+                      <td className="py-4 px-4">
+                        {(() => {
+                          const href = waLink(
+                            p.phone,
+                            `Hola ${p.full_name || "vecino"}, te escribe la administración del condominio.`,
+                          );
+                          return href ? (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={`Abrir WhatsApp con ${p.full_name || p.email || "el miembro"}`}
+                              className="inline-flex items-center gap-1 text-sm text-green-700 hover:underline"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                              {p.phone}
+                            </a>
+                          ) : (
+                            p.phone || "—"
+                          );
+                        })()}
+                      </td>
                       <td className="py-4 px-4 text-sm text-muted-foreground">
                         {format(parseISO(p.created_at), "d MMM yyyy", { locale: es })}
                       </td>
