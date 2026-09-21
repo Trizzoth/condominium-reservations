@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAppSettings } from '@/lib/settings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import SubmitButton from '@/components/ui/submit-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { revalidatePath } from 'next/cache';
@@ -96,7 +96,7 @@ export default async function AdminSettingsPage() {
                 RN-05: no se puede reservar con menos anticipación que esta.
               </p>
             </div>
-            <Button type="submit">Guardar ajustes</Button>
+            <SubmitButton pendingText="Guardando...">Guardar ajustes</SubmitButton>
           </form>
         </CardContent>
       </Card>

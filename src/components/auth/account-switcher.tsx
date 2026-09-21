@@ -8,13 +8,13 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { ArrowLeftRight, Loader2 } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
 import {
   listAccounts,
   switchAccount,
   type SavedAccount,
 } from '@/lib/multicuenta';
 import { homeForRole } from '@/lib/auth-redirect';
+import { myRoleAction } from './actions';
 
 /**
  * Cambio rápido de cuenta desde la foto de perfil.
@@ -45,21 +45,12 @@ export default function AccountSwitcherItems({ currentUserId }: { currentUserId:
       setSwitchingId(null);
       return;
     }
-    const sb = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    const {
-      data: { user },
-    } = await sb.auth.getUser();
+    // Rol por servidor (service-role, confiable) con reintento:
+    // la cookie del setSession a veces tarda un tick en aplicar.
     let role: string | null = null;
-    if (user) {
-      const { data: profile } = await sb
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      role = profile?.role || null;
+    for (let i = 0; i < 3 && !role; i++) {
+      role = await myRoleAction();
+      if (!role) await new Promise((r) => setTimeout(r, 400));
     }
     router.push(homeForRole(role));
     router.refresh();

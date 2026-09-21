@@ -129,7 +129,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="relative h-9 w-9 rounded-full hover:bg-accent transition-colors"
+                      className="relative h-9 w-9 rounded-full shrink-0 ml-1 hover:bg-accent transition-colors"
                     >
                       <Avatar className="h-9 w-9 ring-2 ring-primary/20">
                         <AvatarImage

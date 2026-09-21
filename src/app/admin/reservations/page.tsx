@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import SubmitButton from "@/components/ui/submit-button";
 import { Calendar, Building2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
@@ -292,15 +293,15 @@ export default async function AdminReservationsPage({
                           <div className="flex gap-2">
                             <form action={approve}>
                               <input type="hidden" name="reservationId" value={r.id} />
-                              <Button type="submit" size="sm" variant="default">
+                              <SubmitButton size="sm" pendingText="Aprobando...">
                                 <CheckCircle className="h-4 w-4 mr-1" /> Aprobar
-                              </Button>
+                              </SubmitButton>
                             </form>
                             <form action={reject}>
                               <input type="hidden" name="reservationId" value={r.id} />
-                              <Button type="submit" size="sm" variant="destructive">
+                              <SubmitButton size="sm" variant="destructive" pendingText="Rechazando...">
                                 <XCircle className="h-4 w-4 mr-1" /> Rechazar
-                              </Button>
+                              </SubmitButton>
                             </form>
                           </div>
                         )}
@@ -313,9 +314,9 @@ export default async function AdminReservationsPage({
                               className="h-8 text-xs"
                               maxLength={280}
                             />
-                            <Button type="submit" size="sm" variant="outline">
+                            <SubmitButton size="sm" variant="outline" pendingText="...">
                               Cancelar
-                            </Button>
+                            </SubmitButton>
                           </form>
                         )}
                         {r.status !== "pending" && r.status !== "approved" && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { updateProfile } from "@/app/(auth)/actions";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,10 +28,16 @@ export default function ProfilePage() {
   });
 
   // Precarga los datos guardados (lectura propia permitida por RLS).
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
+      setAvatarUrl((user.user_metadata?.avatar_url as string) || null);
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, apartment, phone")
@@ -46,6 +52,61 @@ export default function ProfilePage() {
       }
     });
   }, [form]);
+
+  /** Foto de perfil: comprime a 256px y la sube a `avatars/{userId}.jpg`. */
+  const handleAvatar = async (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setAvatarBusy(true);
+    setAvatarError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("No autenticado");
+      const blob: Blob = await new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const size = 256;
+          const scale = Math.min(1, size / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(
+            (b) => (b ? resolve(b) : reject(new Error("Compresión falló"))),
+            "image/jpeg",
+            0.85,
+          );
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("No se pudo leer la imagen"));
+        };
+        img.src = url;
+      });
+      // Carpeta propia ({userId}/...): el upsert de una 2da foto pasa
+      // por policy UPDATE, que exige foldername = uid (ver migración).
+      const path = `${user.id}/avatar.jpg`;
+      const { error: upError } = await supabase.storage
+        .from("avatars")
+        .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+      if (upError) throw new Error(upError.message);
+      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = data.publicUrl;
+      const { error: metaError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl },
+      });
+      if (metaError) throw new Error(metaError.message);
+      setAvatarUrl(publicUrl);
+    } catch (e) {
+      setAvatarError(e instanceof Error ? e.message : "No se pudo subir la foto");
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
 
   async function onSubmit(data: ProfileInput) {
     setIsLoading(true);
@@ -67,6 +128,36 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl">
       <h1 className="text-3xl font-bold tracking-tight mb-8">Mi perfil</h1>
+
+      <div className="mb-6 flex items-center gap-4 p-4 border rounded-xl">
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt="Foto de perfil" className="h-16 w-16 rounded-full object-cover" />
+        ) : (
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-xl font-bold text-primary">
+            ?
+          </div>
+        )}
+        <div>
+          <input
+            ref={avatarRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => handleAvatar(e.target.files?.[0])}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={avatarBusy}
+            onClick={() => avatarRef.current?.click()}
+          >
+            {avatarBusy ? "Subiendo..." : "Cambiar foto"}
+          </Button>
+          {avatarError && <p className="mt-1 text-xs text-destructive">{avatarError}</p>}
+        </div>
+      </div>
 
       <Form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {message && (
