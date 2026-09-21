@@ -250,7 +250,7 @@ export async function createReservation(formData: FormData) {
 
       await sendEmail({
         to: user.email,
-        subject: "✅ Reserva recibida - Pendiente de aprobación",
+        subject: "Reserva recibida - Pendiente de aprobación",
         html: reservationCreatedEmail({
           userName: profile?.full_name || "Residente",
           areaName: reservation.common_areas?.name || "Área común",
@@ -350,7 +350,7 @@ export async function createRecurringReservation(formData: FormData) {
   if (user.email) {
     await sendEmail({
       to: user.email,
-      subject: `🔁 Serie recibida: ${created.length} reserva(s) en ${areaName}`,
+      subject: `Serie recibida: ${created.length} reserva(s) en ${areaName}`,
       html: reservationRecurringEmail({
         userName: profile?.full_name || "Residente",
         areaName,
@@ -446,7 +446,7 @@ export async function approveReservationAction(reservationId: string) {
 
     await sendEmail({
       to: recipientEmail,
-      subject: "✅ Tu reserva ha sido aprobada",
+      subject: "Tu reserva ha sido aprobada",
       html: reservationApprovedEmail({
         userName: reservation.profiles?.full_name || "Residente",
         areaName: reservation.common_areas?.name || "Área común",
@@ -538,7 +538,7 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
 
     await sendEmail({
       to: recipientEmail,
-      subject: "❌ Tu reserva ha sido rechazada",
+      subject: "Tu reserva ha sido rechazada",
       html: reservationRejectedEmail({
         userName: reservation.profiles?.full_name || "Residente",
         areaName: reservation.common_areas?.name || "Área común",

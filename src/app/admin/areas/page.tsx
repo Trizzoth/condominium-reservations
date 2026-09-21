@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Building2, Loader2 } from "lucide-react";
+import { Plus, Edit, Building2, Loader2, Check, X } from "lucide-react";
 import { saveArea, toggleAreaActive } from "./actions";
 
 interface Area {
@@ -240,8 +240,13 @@ export default function AdminAreasPage() {
                         size="icon"
                         onClick={() => toggleActive(area)}
                         className={area.is_active ? "text-green-600" : "text-gray-400"}
+                        title={area.is_active ? "Desactivar" : "Activar"}
                       >
-                        {area.is_active ? "✓" : "○"}
+                        {area.is_active ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <X className="h-4 w-4" />
+                        )}
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(area)}>
                         <Edit className="h-4 w-4" />

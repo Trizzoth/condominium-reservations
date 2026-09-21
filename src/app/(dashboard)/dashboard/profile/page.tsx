@@ -170,7 +170,7 @@ export default function ProfilePage() {
           >
             {avatarBusy ? "Subiendo..." : "Cambiar foto"}
           </Button>
-          {avatarOk && <p className="mt-1 text-xs text-green-700">Foto actualizada ✓</p>}
+          {avatarOk && <p className="mt-1 text-xs text-green-700">Foto actualizada.</p>}
           {avatarError && <p className="mt-1 text-xs text-destructive">{avatarError}</p>}
         </div>
       </div>

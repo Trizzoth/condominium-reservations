@@ -265,7 +265,7 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             {topNoShows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin no-shows 🎉</p>
+              <p className="text-sm text-muted-foreground">Sin no-shows</p>
             ) : (
               <div className="space-y-2">
                 {topNoShows.map((u) => (

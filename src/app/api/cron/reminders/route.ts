@@ -65,7 +65,7 @@ export async function GET(request: Request) {
 
       const result = await sendEmail({
         to: recipientEmail,
-        subject: "⏰ Recordatorio: Tu reserva es mañana",
+        subject: "Recordatorio: Tu reserva es mañana",
         html: reservationReminderEmail({
           userName: reservation.profiles?.full_name || "Residente",
           areaName: reservation.common_areas?.name || "Área común",
