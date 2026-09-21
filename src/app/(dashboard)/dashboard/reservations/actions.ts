@@ -433,10 +433,12 @@ export async function approveReservationAction(reservationId: string) {
     );
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
 
-    // QR con el id para check-in en seguridad (si falla, el email va sin QR).
-    let qrCodeDataUrl: string | undefined;
+    // QR con el id para check-in en seguridad, como ADJUNTO CID
+    // (Gmail no renderiza data:URLs, salían rotos). Si falla, el email va sin QR.
+    let qrPngBase64: string | undefined;
     try {
-      qrCodeDataUrl = await QRCode.toDataURL(reservation.id, { width: 160, margin: 1 });
+      const buf: Buffer = await QRCode.toBuffer(reservation.id, { width: 320, margin: 1 });
+      qrPngBase64 = buf.toString("base64");
     } catch (err) {
       console.error("QR generation failed:", err);
     }
@@ -450,8 +452,18 @@ export async function approveReservationAction(reservationId: string) {
         startTime: startFormatted,
         endTime: endFormatted,
         adminNotes: reservation.admin_notes || undefined,
-        qrCodeDataUrl,
+        hasQr: !!qrPngBase64,
       }),
+      attachments: qrPngBase64
+        ? [
+            {
+              filename: "qr-checkin.png",
+              contentBase64: qrPngBase64,
+              contentType: "image/png",
+              cid: "qr-checkin",
+            },
+          ]
+        : undefined,
     });
   }
 
