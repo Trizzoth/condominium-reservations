@@ -20,7 +20,7 @@ import { waLink } from "@/lib/whatsapp";
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; role?: string }>;
+  searchParams: Promise<{ q?: string; role?: string; page?: string }>;
 }) {
   // Service-role: RLS solo deja ver el profile propio. Layout ya validó admin.
   const adminDb = createAdminClient();
@@ -30,7 +30,7 @@ export default async function AdminUsersPage({
     data: { user: currentUser },
   } = await userClient.auth.getUser();
 
-  const { q = "", role = "all" } = await searchParams;
+  const { q = "", role = "all", page = "1" } = await searchParams;
 
   const { data: profiles } = await adminDb
     .from("profiles")
@@ -56,6 +56,14 @@ export default async function AdminUsersPage({
     admin: { label: "Admin", color: "bg-purple-100 text-purple-800", icon: Shield },
     security: { label: "Seguridad", color: "bg-orange-100 text-orange-800", icon: Building2 },
   } as const;
+
+  // Paginación en servidor (20 por página) para cientos de usuarios.
+  const PAGE_SIZE = 20;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(Math.max(1, parseInt(page) || 1), totalPages);
+  const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const qs = (p: number) =>
+    `/admin/users?q=${encodeURIComponent(q)}&role=${encodeURIComponent(role)}&page=${p}`;
 
   return (
     <div className="space-y-8">
@@ -96,6 +104,13 @@ export default async function AdminUsersPage({
             </a>
           )}
           <InviteUserForm />
+          <a
+            href={`/admin/users/export?q=${encodeURIComponent(q)}&role=${encodeURIComponent(role)}`}
+            download
+            className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Exportar CSV ({filtered.length})
+          </a>
         </div>
       </div>
 
@@ -151,7 +166,7 @@ export default async function AdminUsersPage({
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filtered?.map((p) => {
+                {paged?.map((p) => {
                   const config = roleConfig[p.role as keyof typeof roleConfig];
                   const Icon = config?.icon || User;
                   const isSelf = currentUser && p.id === currentUser.id;
@@ -222,6 +237,29 @@ export default async function AdminUsersPage({
                     ? "Sin resultados para esos filtros"
                     : "No hay usuarios registrados"}
                 </p>
+              </div>
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 text-sm">
+                <span className="text-muted-foreground">
+                  Mostrando {(currentPage - 1) * PAGE_SIZE + 1}–
+                  {Math.min(currentPage * PAGE_SIZE, filtered.length)} de {filtered.length}
+                </span>
+                <div className="flex gap-2">
+                  {currentPage > 1 ? (
+                    <a
+                      href={qs(currentPage - 1)}
+                      className="rounded-md border px-3 py-1 hover:bg-muted"
+                    >
+                      ← Anterior
+                    </a>
+                  ) : null}
+                  {currentPage < totalPages ? (
+                    <a href={qs(currentPage + 1)} className="rounded-md border px-3 py-1 hover:bg-muted">
+                      Siguiente →
+                    </a>
+                  ) : null}
+                </div>
               </div>
             )}
           </div>

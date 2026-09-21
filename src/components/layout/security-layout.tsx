@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User as UserIcon, LayoutDashboard, Shield, SprayCan } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Shield, SprayCan, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "./mobile-nav";
@@ -77,6 +77,7 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/security", label: "Hoy", icon: LayoutDashboard },
     { href: "/security/cleaning", label: "Limpieza", icon: SprayCan },
+    { href: "/security/incidents", label: "Incidencias", icon: TriangleAlert },
   ];
 
   return (

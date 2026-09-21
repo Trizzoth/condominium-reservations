@@ -83,6 +83,37 @@ export default async function AdminPage() {
   const topResidents = [...byUser.values()].sort((a, b) => b.count - a.count).slice(0, 5);
   const maxResident = topResidents[0]?.count || 1;
 
+  // Stats v2: no-shows por residente + mapa día×hora (todo con datos que ya hay).
+  const byNoShow = new Map<string, { name: string; apartment: string; count: number }>();
+  for (const r of reservationsWithEmail) {
+    if (r.status !== "no_show") continue;
+    const prev = byNoShow.get(r.user_id) || {
+      name: r.profiles?.full_name || r.resident_email || "Sin nombre",
+      apartment: r.profiles?.apartment || "",
+      count: 0,
+    };
+    prev.count += 1;
+    byNoShow.set(r.user_id, prev);
+  }
+  const topNoShows = [...byNoShow.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+  const maxNoShow = topNoShows[0]?.count || 1;
+
+  const DOW = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+  const HEAT_HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 06–23
+  const heat = new Map<string, number>();
+  let heatMax = 1;
+  for (const r of activeReservations) {
+    try {
+      const d = parseISO(r.start_time);
+      const key = `${d.getDay()}-${d.getHours()}`;
+      const n = (heat.get(key) || 0) + 1;
+      heat.set(key, n);
+      if (n > heatMax) heatMax = n;
+    } catch {
+      // fecha inválida: se ignora
+    }
+  }
+
   const statusConfig = {
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
     approved: { label: "Aprobada", color: "bg-green-100 text-green-800", icon: CheckCircle },
@@ -223,6 +254,82 @@ export default async function AdminPage() {
                 ))}
               </div>
             )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top no-shows</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topNoShows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin no-shows 🎉</p>
+            ) : (
+              <div className="space-y-2">
+                {topNoShows.map((u) => (
+                  <div key={`${u.name}-${u.apartment}`} className="text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate font-medium">
+                        {u.name}
+                        {u.apartment ? ` · ${u.apartment}` : ""}
+                      </span>
+                      <span className="text-muted-foreground">{u.count}</span>
+                    </div>
+                    <div className="mt-1 h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-red-500"
+                        style={{ width: `${Math.round((u.count / maxNoShow) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Mapa día × hora (activas)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-center text-xs">
+                <thead>
+                  <tr>
+                    <th className="p-1" />
+                    {HEAT_HOURS.map((h) => (
+                      <th key={h} className="p-1 font-medium text-muted-foreground">
+                        {String(h).padStart(2, "0")}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {DOW.map((day, dow) => (
+                    <tr key={day}>
+                      <td className="p-1 text-left font-medium">{day}</td>
+                      {HEAT_HOURS.map((h) => {
+                        const n = heat.get(`${dow}-${h}`) || 0;
+                        const alpha = n === 0 ? 0.06 : 0.15 + 0.85 * (n / heatMax);
+                        return (
+                          <td key={h} className="p-0.5">
+                            <div
+                              title={`${day} ${String(h).padStart(2, "0")}:00 — ${n} reserva(s)`}
+                              className="flex h-6 items-center justify-center rounded"
+                              style={{ backgroundColor: `rgba(59, 130, 246, ${alpha.toFixed(2)})` }}
+                            >
+                              {n > 0 && <span className="font-bold text-primary-foreground">{n}</span>}
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>
