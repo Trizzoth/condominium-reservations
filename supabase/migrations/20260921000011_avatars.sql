@@ -19,3 +19,8 @@ WITH CHECK (bucket_id = 'avatars');
 DROP POLICY IF EXISTS "Public read avatars" ON storage.objects;
 CREATE POLICY "Public read avatars" ON storage.objects
 FOR SELECT USING (bucket_id = 'avatars');
+
+DROP POLICY IF EXISTS "Users delete own avatar" ON storage.objects;
+CREATE POLICY "Users delete own avatar" ON storage.objects
+FOR DELETE TO authenticated
+USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
