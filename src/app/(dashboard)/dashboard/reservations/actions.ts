@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getUserEmailsByIds } from "@/lib/supabase/admin";
+import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { z } from "zod";
 import {
   sendEmail,
@@ -390,23 +390,32 @@ export async function approveReservationAction(reservationId: string) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { error: "No autenticado" };
+  if (!user) {
+    return { error: "No autenticado" };
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
-  if (profile?.role !== "admin") return { error: "No autorizado" };
+  if (profile?.role !== "admin") {
+    return { error: "No autorizado" };
+  }
 
-  const { data: reservation, error } = await supabase
+  // Escritura con service-role: las policies Admins * exigen claim JWT
+  // `role=admin` que Supabase no incluye por defecto (el update vía
+  // user-client no toca filas). El rol ya se verificó arriba.
+  const { data: reservation, error } = await createAdminClient()
     .from("reservations")
     .update({ status: "approved", updated_at: new Date().toISOString() })
     .eq("id", reservationId)
     .select("*, common_areas(name), profiles(full_name)")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    return { error: error.message };
+  }
 
   // Send approval email (el email vive en auth.users, no en profiles)
   const emails = await getUserEmailsByIds([reservation.user_id]);
@@ -478,7 +487,7 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
     .single();
   if (profile?.role !== "admin") return { error: "No autorizado" };
 
-  const { data: reservation, error } = await supabase
+  const { data: reservation, error } = await createAdminClient()
     .from("reservations")
     .update({
       status: "rejected",

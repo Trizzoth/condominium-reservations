@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getAppSettings } from '@/lib/settings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,8 @@ async function saveSettings(formData: FormData) {
     { key: 'min_advance_minutes', value: String(validated.data.min_advance_minutes) },
   ];
   for (const row of rows) {
-    await supabase
+    // service-role: el JWT no trae claim admin (ver approveReservationAction).
+    await createAdminClient()
       .from('app_settings')
       .upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'key' });
   }
