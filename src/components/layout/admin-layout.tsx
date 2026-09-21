@@ -28,6 +28,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "./mobile-nav";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import AccountSwitcherItems from "@/components/auth/account-switcher";
+import { recordCurrentAccount, localSignOut } from "@/lib/multicuenta";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -48,6 +50,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
+      // Multicuenta: guarda la sesión para cambio rápido desde el avatar.
+      void recordCurrentAccount();
     };
 
     getUser();
@@ -62,12 +66,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    await supabase.auth.signOut();
+  const signOut = () => {
+    // Salida local (ver localSignOut): no revoca en el servidor para
+    // que el cambio rápido de cuenta siga funcionando.
+    localSignOut();
     router.push("/login");
     router.refresh();
   };
@@ -151,6 +153,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         Mi perfil
                       </Link>
                     </DropdownMenuItem>
+                    <AccountSwitcherItems currentUserId={user.id} />
                     <DropdownMenuItem
                       onClick={signOut}
                       className="flex items-center gap-2 text-red-600"

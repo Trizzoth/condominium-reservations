@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSchema, ProfileInput } from "@/lib/validations/auth";
+import PhoneInput from "@/components/forms/phone-input";
 import {
   Form,
   FormItem,
@@ -113,7 +114,9 @@ export default function ProfilePage() {
             <Controller
               name="phone"
               control={form.control}
-              render={({ field }) => <Input type="tel" placeholder="+57 300 123 4567" {...field} />}
+              render={({ field }) => (
+                <PhoneInput value={field.value || ""} onChange={field.onChange} />
+              )}
             />
           </FormControl>
           <FormDescription>Opcional, para contactos urgentes</FormDescription>

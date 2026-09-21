@@ -23,15 +23,8 @@ import QrScanner from "@/components/security/qr-scanner";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
 import SubmitButton from "@/components/ui/submit-button";
 import { logAudit } from "@/lib/audit";
+import { toWaNumber } from "@/lib/whatsapp";
 
-// wa.me gratis ($0, sin API): normaliza a E.164 sin "+".
-// CR por defecto: números de 8 dígitos se prefijan con 506.
-function toWaNumber(phone: string): string | null {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 8) return `506${digits}`;
-  if (digits.length >= 11 && digits.length <= 15) return digits;
-  return null;
-}
 // Solo roles operativos pueden registrar movimientos de acceso.
 async function requireSecurityRole() {
   const supabase = await createClient();
