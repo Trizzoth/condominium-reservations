@@ -87,13 +87,15 @@ export default function ProfilePage() {
         };
         img.src = url;
       });
-      const path = `${user.id}.jpg`;
+      // Carpeta propia ({userId}/...): el upsert de una 2da foto pasa
+      // por policy UPDATE, que exige foldername = uid (ver migración).
+      const path = `${user.id}/avatar.jpg`;
       const { error: upError } = await supabase.storage
         .from("avatars")
         .upload(path, blob, { contentType: "image/jpeg", upsert: true });
       if (upError) throw new Error(upError.message);
       const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+      const publicUrl = data.publicUrl;
       const { error: metaError } = await supabase.auth.updateUser({
         data: { avatar_url: publicUrl },
       });

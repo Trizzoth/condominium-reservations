@@ -130,7 +130,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full shrink-0 ml-1">
                       <Avatar className="h-9 w-9">
                         <AvatarImage
                           src={user.user_metadata.avatar_url || ""}

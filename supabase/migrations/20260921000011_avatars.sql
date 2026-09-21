@@ -1,4 +1,6 @@
 -- Fotos de perfil: bucket público, 256px comprimidas en cliente (~20KB c/u).
+-- Convención: {userId}/avatar.jpg (el upsert de la 2da foto evalúa la
+-- policy UPDATE, que exige foldername = uid).
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
