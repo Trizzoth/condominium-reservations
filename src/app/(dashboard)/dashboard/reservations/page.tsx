@@ -2,12 +2,15 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { canCancelReservation } from "@/lib/reservation-rules";
+import { getAppSettings } from "@/lib/settings";
+import { logAudit } from "@/lib/audit";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Calendar, Plus, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import PullToRefresh from "@/components/ui/pull-to-refresh";
 
 // Server Action: cancela una reserva propia en estado pendiente.
 // Se usa como `action` de un <form>, que es la forma válida de invocar
@@ -21,7 +24,9 @@ async function cancelReservation(formData: FormData) {
     data: { user: currentUser },
   } = await supabase.auth.getUser();
   if (!currentUser) return;
-  // Defensa: verificar ventana de 2h (RN-07) en servidor (la UI también la aplica).
+  // Defensa: verificar ventana de cancelación (RN-07, configurable) en
+  // servidor (la UI también la aplica).
+  const { cancelWindowHours } = await getAppSettings();
   const { data: target } = await supabase
     .from("reservations")
     .select("start_time")
@@ -29,13 +34,18 @@ async function cancelReservation(formData: FormData) {
     .eq("user_id", currentUser.id)
     .eq("status", "pending")
     .single();
-  if (!target || !canCancelReservation(target.start_time)) return;
+  if (!target || !canCancelReservation(target.start_time, new Date(), cancelWindowHours)) return;
   await supabase
     .from("reservations")
     .update({ status: "cancelled", updated_at: new Date().toISOString() })
     .eq("id", reservationId)
     .eq("user_id", currentUser.id)
     .eq("status", "pending");
+  await logAudit({
+    actorId: currentUser.id,
+    action: "reservation.cancelled",
+    entityId: reservationId,
+  });
   revalidatePath("/dashboard/reservations");
 }
 
@@ -52,6 +62,8 @@ export default async function ReservationsPage() {
     .select("*, common_areas(name)")
     .eq("user_id", user.id)
     .order("start_time", { ascending: false });
+
+  const { cancelWindowHours } = await getAppSettings();
 
   const statusConfig = {
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -87,12 +99,14 @@ export default async function ReservationsPage() {
           </CardContent>
         </Card>
       ) : (
+        <PullToRefresh>
         <div className="space-y-4">
           {reservations!.map((reservation) => {
             const config = statusConfig[reservation.status as keyof typeof statusConfig];
             const Icon = config?.icon || Calendar;
             const canCancel =
-              reservation.status === "pending" && canCancelReservation(reservation.start_time);
+              reservation.status === "pending" &&
+              canCancelReservation(reservation.start_time, new Date(), cancelWindowHours);
             return (
               <Card key={reservation.id}>
                 <CardContent className="py-4">
@@ -145,7 +159,7 @@ export default async function ReservationsPage() {
                         reservation.status === "pending" && (
                           <span
                             className="text-xs text-muted-foreground"
-                            title="Solo se puede cancelar hasta 2h antes del inicio"
+                            title={`Solo se puede cancelar hasta ${cancelWindowHours}h antes del inicio`}
                           >
                             No cancelable
                           </span>
@@ -164,6 +178,7 @@ export default async function ReservationsPage() {
             );
           })}
         </div>
+        </PullToRefresh>
       )}
     </div>
   );

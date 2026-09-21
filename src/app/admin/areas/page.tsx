@@ -31,8 +31,26 @@ interface Area {
   capacity: number;
   rules: string;
   is_active: boolean;
+  min_duration_hours: number;
+  max_duration_hours: number;
+  open_hour: string;
+  close_hour: string;
+  max_per_week: number;
   created_at: string;
 }
+
+const EMPTY_FORM = {
+  name: "",
+  description: "",
+  capacity: 0,
+  rules: "",
+  is_active: true,
+  min_duration_hours: 3,
+  max_duration_hours: 6,
+  open_hour: "06:00",
+  close_hour: "24:00",
+  max_per_week: 3,
+};
 
 export default function AdminAreasPage() {
   const [areas, setAreas] = useState<Area[]>([]);
@@ -41,14 +59,7 @@ export default function AdminAreasPage() {
   const [editingArea, setEditingArea] = useState<Area | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const formState = {
-    name: "",
-    description: "",
-    capacity: 0,
-    rules: "",
-    is_active: true,
-  };
+  const [formState, setFormState] = useState({ ...EMPTY_FORM });
 
   const supabase = useMemo(
     () =>
@@ -88,6 +99,11 @@ export default function AdminAreasPage() {
       capacity: formState.capacity,
       rules: formState.rules,
       is_active: formState.is_active,
+      min_duration_hours: formState.min_duration_hours,
+      max_duration_hours: formState.max_duration_hours,
+      open_hour: formState.open_hour,
+      close_hour: formState.close_hour,
+      max_per_week: formState.max_per_week,
     };
 
     let result;
@@ -116,6 +132,11 @@ export default function AdminAreasPage() {
       capacity: area.capacity,
       rules: area.rules,
       is_active: area.is_active,
+      min_duration_hours: area.min_duration_hours ?? 3,
+      max_duration_hours: area.max_duration_hours ?? 6,
+      open_hour: area.open_hour ?? "06:00",
+      close_hour: area.close_hour ?? "24:00",
+      max_per_week: area.max_per_week ?? 3,
     });
     setDialogOpen(true);
   };
@@ -127,17 +148,7 @@ export default function AdminAreasPage() {
   };
 
   const resetForm = () => {
-    setFormState({
-      name: "",
-      description: "",
-      capacity: 0,
-      rules: "",
-      is_active: true,
-    });
-  };
-
-  const setFormState = (state: typeof formState) => {
-    Object.assign(formState, state);
+    setFormState({ ...EMPTY_FORM });
   };
 
   const toggleActive = async (area: Area) => {
@@ -215,6 +226,9 @@ export default function AdminAreasPage() {
                         <p className="font-medium">{area.name}</p>
                         <p className="text-sm text-muted-foreground">
                           Capacidad: {area.capacity} personas ·{" "}
+                          {area.min_duration_hours ?? 3}–{area.max_duration_hours ?? 6}h ·{" "}
+                          {area.open_hour ?? "06:00"}–{area.close_hour ?? "24:00"} ·{" "}
+                          máx {area.max_per_week ?? 3}/sem{" "}
                           {area.is_active ? (
                             <Badge variant="default" className="ml-2">
                               Activa
@@ -302,6 +316,80 @@ export default function AdminAreasPage() {
                 placeholder="Ej: Prohibido fumar, máximo 4 horas, reservar con 2h de anticipación"
                 rows={3}
               />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="min_duration_hours">Duración mínima (horas)</Label>
+                <Input
+                  id="min_duration_hours"
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={formState.min_duration_hours}
+                  onChange={(e) =>
+                    setFormState({
+                      ...formState,
+                      min_duration_hours: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max_duration_hours">Duración máxima (horas)</Label>
+                <Input
+                  id="max_duration_hours"
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={formState.max_duration_hours}
+                  onChange={(e) =>
+                    setFormState({
+                      ...formState,
+                      max_duration_hours: parseInt(e.target.value) || 6,
+                    })
+                  }
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="open_hour">Apertura (HH:MM)</Label>
+                <Input
+                  id="open_hour"
+                  value={formState.open_hour}
+                  onChange={(e) => setFormState({ ...formState, open_hour: e.target.value })}
+                  placeholder="06:00"
+                  pattern="^([01]\d|2[0-3]):[0-5]\d$"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="close_hour">Cierre (HH:MM, 24:00 = medianoche)</Label>
+                <Input
+                  id="close_hour"
+                  value={formState.close_hour}
+                  onChange={(e) => setFormState({ ...formState, close_hour: e.target.value })}
+                  placeholder="24:00"
+                  pattern="^([01]\d|2[0-4]):[0-5]\d$"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max_per_week">Máx reservas/semana</Label>
+                <Input
+                  id="max_per_week"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={formState.max_per_week}
+                  onChange={(e) =>
+                    setFormState({ ...formState, max_per_week: parseInt(e.target.value) || 3 })
+                  }
+                  required
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="is_active">Estado</Label>

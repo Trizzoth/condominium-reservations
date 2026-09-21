@@ -18,6 +18,7 @@ import { es } from "date-fns/locale";
 import { es as esDayPicker } from "react-day-picker/locale";
 import { createBrowserClient } from "@supabase/ssr";
 import { createReservation } from "../actions";
+import { createRecurringReservation } from "../actions";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface TimeSlot {
@@ -30,6 +31,11 @@ interface Area {
   name: string;
   capacity: number;
   rules: string;
+  min_duration_hours: number | null;
+  max_duration_hours: number | null;
+  open_hour: string | null;
+  close_hour: string | null;
+  max_per_week: number | null;
 }
 
 export default function NewReservationPage() {
@@ -38,6 +44,7 @@ export default function NewReservationPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedStartTime, setSelectedStartTime] = useState<string>("");
   const [selectedEndTime, setSelectedEndTime] = useState<string>("");
+  const [repeatWeeks, setRepeatWeeks] = useState<string>("1");
   const [areas, setAreas] = useState<Area[]>([]);
   const [schedules, setSchedules] = useState<
     Record<number, { open: string; close: string; maxDuration: number }>
@@ -218,39 +225,62 @@ export default function NewReservationPage() {
     formData.set("commonAreaId", selectedArea);
     formData.set("startTime", start.toISOString());
     formData.set("endTime", end.toISOString());
+    formData.set("weeks", repeatWeeks);
 
-    const result = await createReservation(formData);
+    const result =
+      repeatWeeks === "1"
+        ? await createReservation(formData)
+        : await createRecurringReservation(formData);
     setSubmitting(false);
     if (result.error) {
       const err = result.error as { form?: string[] };
       setError(err.form?.[0] || "Error al crear reserva");
       scrollToResult();
-    } else {
-      setSuccess("Reserva enviada. Espera aprobación del admin.");
+    } else if ("success" in result && typeof result.success === "string") {
+      setSuccess(result.success);
       scrollToResult();
-      setTimeout(() => router.push("/dashboard/reservations"), 2000);
+      setTimeout(() => router.push("/dashboard/reservations"), 2500);
     }
   };
 
   const timeSlots = selectedArea && selectedDate ? getTimeSlots(selectedDate) : [];
 
-  // Reglas visibles (RN-03 1-3h, RN-04 07:00-21:00): lo inválido ni se ofrece.
+  // Reglas del área elegida (configurables en /admin/areas; defaults = decisión David).
+  const selectedAreaObj = areas.find((a) => a.id === selectedArea);
+  const minHours = selectedAreaObj?.min_duration_hours ?? 3;
+  const maxHours = selectedAreaObj?.max_duration_hours ?? 6;
+  const areaOpen = selectedAreaObj?.open_hour ?? "06:00";
+  const areaClose = selectedAreaObj?.close_hour ?? "24:00";
+  // Reglas visibles: lo inválido ni se ofrece.
   const toMin = (t: string) => {
     const [h, m] = t.split(":").map(Number);
     return h * 60 + m;
   };
+  const toCloseMin = (t: string) => (t === "24:00" || t === "00:00" ? 1440 : toMin(t));
+  const CLOSE_MIN = toCloseMin(areaClose);
   const startMin = selectedStartTime ? toMin(selectedStartTime) : null;
   const validStartSlots = timeSlots.filter((slot) => {
-    // Cabe mínimo 1h antes del cierre operativo.
-    return toMin(slot.time) + 60 <= toMin("21:00");
+    // Cabe la duración mínima antes del cierre del área.
+    return toMin(slot.time) + minHours * 60 <= CLOSE_MIN;
   });
+  const endCandidates =
+    startMin === null
+      ? []
+      : [
+          ...timeSlots,
+          // Medianoche exacta como fin válido (los slots llegan a 23:30).
+          ...(areaClose === "24:00" || areaClose === "00:00"
+            ? [{ time: "24:00", available: true }]
+            : []),
+        ];
   const validEndSlots =
     startMin === null
       ? []
-      : timeSlots.filter((slot) => {
-          const m = toMin(slot.time);
+      : endCandidates.filter((slot) => {
+          const raw = toMin(slot.time);
+          const m = slot.time === "24:00" ? CLOSE_MIN : raw;
           const dur = m - startMin;
-          return m > startMin && dur >= 60 && dur <= 180 && slot.time <= "21:00";
+          return m > startMin && dur >= minHours * 60 && dur <= maxHours * 60 && slot.available;
         });
 
   const handleStartChange = (v: string) => {
@@ -259,11 +289,9 @@ export default function NewReservationPage() {
   };
 
   const formatDuration = (start: string, end: string) => {
-    const startDate = new Date(`2000-01-01T${start}`);
-    const endDate = new Date(`2000-01-01T${end}`);
-    const diffMs = endDate.getTime() - startDate.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const diffMin = toMin(end) - toMin(start);
+    const hours = Math.floor(diffMin / 60);
+    const minutes = diffMin % 60;
     return `${hours}h ${minutes}min`;
   };
 
@@ -450,7 +478,11 @@ export default function NewReservationPage() {
                         <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
                           <p>Duración: {formatDuration(selectedStartTime, selectedEndTime)}</p>
                           <p className="text-muted-foreground">
-                            Reservas de 1 a 3 horas, entre 07:00 y 21:00
+                            En esta área: de {minHours} a {maxHours} horas, entre {areaOpen} y{" "}
+                            {areaClose}
+                            {selectedAreaObj?.max_per_week
+                              ? ` · máx ${selectedAreaObj.max_per_week}/semana`
+                              : ""}
                           </p>
                         {checkingAvailability && (
                           <p className="text-primary mt-1 flex items-center gap-1">
@@ -462,11 +494,45 @@ export default function NewReservationPage() {
                     )}
                       {selectedStartTime && !selectedEndTime && validEndSlots.length === 0 && (
                         <div className="mt-3 p-3 bg-yellow-50 text-yellow-800 rounded-lg text-sm">
-                          Con esa hora de inicio no hay fin válido (1 a 3 horas dentro de
-                          07:00–21:00). Elige otro inicio.
+                          Con esa hora de inicio no hay fin válido ({minHours} a {maxHours} horas
+                          dentro de {areaOpen}–{areaClose}). Elige otro inicio.
                         </div>
                       )}
                     </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Step 4: repetición opcional */}
+            {selectedArea && selectedDate && selectedStartTime && selectedEndTime && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5" />
+                    4. Repetición (opcional)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Label>Repetir cada semana, mismo día y hora</Label>
+                  <Select value={repeatWeeks} onValueChange={setRepeatWeeks}>
+                    <SelectTrigger className="w-full mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Solo esta vez</SelectItem>
+                      <SelectItem value="2">2 semanas</SelectItem>
+                      <SelectItem value="3">3 semanas</SelectItem>
+                      <SelectItem value="4">4 semanas</SelectItem>
+                      <SelectItem value="6">6 semanas</SelectItem>
+                      <SelectItem value="8">8 semanas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {repeatWeeks !== "1" && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Se creará una reserva por semana ({repeatWeeks} en total). Las fechas
+                      ocupadas se omiten y se te avisan en un solo correo.
+                    </p>
                   )}
                 </CardContent>
               </Card>

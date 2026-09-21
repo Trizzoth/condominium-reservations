@@ -12,11 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User as UserIcon, LayoutDashboard, Settings, Home, Building2 } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Settings, Home, Building2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "./mobile-nav";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import NotificationBell from "@/components/notifications/notification-bell";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -78,6 +79,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/dashboard", label: "Inicio", icon: Home },
     { href: "/dashboard/reservations", label: "Mis reservas", icon: LayoutDashboard },
+    { href: "/dashboard/incidents", label: "Incidencias", icon: TriangleAlert },
     { href: "/dashboard/profile", label: "Perfil", icon: Settings },
   ];
 
@@ -119,6 +121,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               </nav>
             </div>
             <div className="flex items-center gap-4">
+              {user && <NotificationBell />}
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
