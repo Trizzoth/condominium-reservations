@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { homeForRole } from "@/lib/auth-redirect";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -17,6 +18,13 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+
+  // Home por rol: admin/seguridad que caen aquí (ej. tras cambio de
+  // cuenta) van a su panel. Las subrutas (/dashboard/profile, etc.)
+  // siguen abiertas para todos los roles.
+  if (profile?.role === "admin" || profile?.role === "security") {
+    redirect(homeForRole(profile.role));
+  }
   const { data: reservations } = await supabase
     .from("reservations")
     .select("*, common_areas(name)")
