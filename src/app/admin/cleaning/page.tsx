@@ -39,6 +39,9 @@ const taskSchema = z.object({
   title: z.string().min(3).max(120),
   detail: z.string().max(500).optional(),
   common_area_id: z.string().uuid().optional(),
+  // Fecha programada (YYYY-MM-DD del input date) + repetición semanal.
+  scheduled_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  weeks: z.coerce.number().int().min(1).max(8).default(1),
 });
 
 async function createTask(formData: FormData) {
@@ -49,33 +52,42 @@ async function createTask(formData: FormData) {
     title: formData.get('title'),
     detail: formData.get('detail') || undefined,
     common_area_id: formData.get('common_area_id') || undefined,
+    scheduled_date: formData.get('scheduled_date') || undefined,
+    weeks: formData.get('weeks') || 1,
   });
   if (!validated.success) return;
 
-  const { data: task, error } = await createAdminClient()
-    .from('cleaning_tasks')
-    .insert({
+  // Serie semanal: misma tarea, una por semana desde la fecha elegida.
+  const base = validated.data.scheduled_date
+    ? new Date(`${validated.data.scheduled_date}T12:00:00`)
+    : new Date();
+  const adminDb = createAdminClient();
+  let created = 0;
+  for (let i = 0; i < validated.data.weeks; i++) {
+    const when = new Date(base.getTime() + i * 7 * 24 * 3600 * 1000);
+    const { error } = await adminDb.from('cleaning_tasks').insert({
       title: validated.data.title,
       detail: validated.data.detail || null,
       common_area_id: validated.data.common_area_id || null,
+      scheduled_for: when.toISOString(),
       created_by: auth.adminId,
-    })
-    .select('id, title')
-    .single();
-  if (error || !task) return;
+    });
+    if (!error) created += 1;
+  }
+  if (created === 0) return;
 
-  // Aviso por campanita a todo el personal de seguridad (conserjes).
+  // UN aviso resumen a todo el personal de seguridad (conserjes).
   try {
-    const admin = createAdminClient();
-    const { data: staff } = await admin
-      .from('profiles')
-      .select('id')
-      .eq('role', 'security');
+    const { data: staff } = await adminDb.from('profiles').select('id').eq('role', 'security');
+    const whenText = format(base, "d MMM", { locale: es });
     for (const s of staff || []) {
       await notifyUser({
         user_id: s.id,
-        title: 'Nueva tarea de limpieza',
-        body: task.title,
+        title:
+          created === 1
+            ? 'Nueva tarea de limpieza'
+            : `${created} tareas de limpieza semanales`,
+        body: `${validated.data.title} · desde ${whenText}`,
         type: 'info',
       });
     }
@@ -118,6 +130,7 @@ export default async function AdminCleaningPage() {
   const { data: tasks } = await supabase
     .from('cleaning_tasks')
     .select('*, common_areas(name)')
+    .order('scheduled_for', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
   const { data: areas } = await supabase
     .from('common_areas')
@@ -177,6 +190,32 @@ export default async function AdminCleaningPage() {
                 maxLength={500}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="task-date">Programada para</Label>
+              <Input
+                id="task-date"
+                name="scheduled_date"
+                type="date"
+                defaultValue={format(new Date(), "yyyy-MM-dd")}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Repetir cada semana</Label>
+              <Select name="weeks" defaultValue="1">
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Solo esta vez</SelectItem>
+                  <SelectItem value="2">2 semanas</SelectItem>
+                  <SelectItem value="3">3 semanas</SelectItem>
+                  <SelectItem value="4">4 semanas</SelectItem>
+                  <SelectItem value="6">6 semanas</SelectItem>
+                  <SelectItem value="8">8 semanas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="md:col-span-2">
               <SubmitButton pendingText="Creando y avisando...">
                 <SprayCan className="mr-2 h-4 w-4" /> Crear y avisar al conserje
@@ -206,7 +245,9 @@ export default async function AdminCleaningPage() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {t.common_areas?.name || 'General'} ·{' '}
-                    {format(parseISO(t.created_at), "d MMM HH:mm", { locale: es })}
+                    {t.scheduled_for
+                      ? `para el ${format(parseISO(t.scheduled_for), "EEEE d MMM", { locale: es })}`
+                      : format(parseISO(t.created_at), "d MMM HH:mm", { locale: es })}
                   </p>
                   {t.detail && <p className="mt-1 text-sm">{t.detail}</p>}
                 </div>

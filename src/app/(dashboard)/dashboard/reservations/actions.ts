@@ -257,6 +257,7 @@ export async function createReservation(formData: FormData) {
           startTime: `${startFormatted}`,
           endTime: endFormatted,
           reservationId: reservation.id.slice(0, 8),
+          detailId: reservation.id,
         }),
       });
     }
@@ -453,6 +454,7 @@ export async function approveReservationAction(reservationId: string) {
         endTime: endFormatted,
         adminNotes: reservation.admin_notes || undefined,
         hasQr: !!qrPngBase64,
+        detailId: reservation.id,
       }),
       attachments: qrPngBase64
         ? [

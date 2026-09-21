@@ -240,6 +240,7 @@ export type Database = {
           detail: string | null;
           status: "pending" | "done";
           created_by: string | null;
+          scheduled_for: string | null;
           created_at: string;
           done_at: string | null;
           updated_at: string;
@@ -260,6 +261,7 @@ export type Database = {
           detail?: string | null;
           status?: "pending" | "done";
           created_by?: string | null;
+          scheduled_for?: string | null;
           created_at?: string;
           done_at?: string | null;
           updated_at?: string;
@@ -271,6 +273,7 @@ export type Database = {
           detail?: string | null;
           status?: "pending" | "done";
           created_by?: string | null;
+          scheduled_for?: string | null;
           created_at?: string;
           done_at?: string | null;
           updated_at?: string;

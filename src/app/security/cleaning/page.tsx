@@ -47,6 +47,7 @@ export default async function SecurityCleaningPage() {
     .from('cleaning_tasks')
     .select('*, common_areas(name)')
     .eq('status', 'pending')
+    .order('scheduled_for', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 
   return (
@@ -78,7 +79,9 @@ export default async function SecurityCleaningPage() {
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {t.common_areas?.name || 'General'} ·{' '}
-                      {format(parseISO(t.created_at), "d MMM HH:mm", { locale: es })}
+                      {t.scheduled_for
+                        ? `para el ${format(parseISO(t.scheduled_for), "EEEE d MMM", { locale: es })}`
+                        : format(parseISO(t.created_at), "d MMM HH:mm", { locale: es })}
                     </p>
                     {t.detail && <p className="mt-1 text-sm">{t.detail}</p>}
                   </div>

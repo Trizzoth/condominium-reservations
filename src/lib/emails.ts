@@ -170,18 +170,28 @@ export async function sendEmail({ to, subject, html, attachments }: EmailParams)
   }
 }
 
+/**
+ * Link al detalle de la reserva (con QR grande) o al listado si no hay id.
+ */
+function detailUrl(site: string | undefined, detailId?: string): string {
+  if (detailId) return `${site}/dashboard/reservations/${detailId}`;
+  return `${site}/dashboard/reservations`;
+}
+
 export function reservationCreatedEmail({
   userName,
   areaName,
   startTime,
   endTime,
   reservationId,
+  detailId,
 }: {
   userName: string;
   areaName: string;
   startTime: string;
   endTime: string;
   reservationId: string;
+  detailId?: string;
 }) {
   const safeUserName = escapeHtml(userName);
   const safeAreaName = escapeHtml(areaName);
@@ -223,7 +233,7 @@ export function reservationCreatedEmail({
         <p style="color: #6b7280; font-size: 14px;">Te notificaremos cuando el administrador apruebe o rechace tu solicitud.</p>
         
         <div style="text-align: center; margin-top: 30px;">
-          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/reservations" style="background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+          <a href="${detailUrl(process.env.NEXT_PUBLIC_SITE_URL, detailId)}" style="background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
             Ver mis reservas
           </a>
         </div>
@@ -244,6 +254,7 @@ export function reservationApprovedEmail({
   endTime,
   adminNotes,
   hasQr,
+  detailId,
 }: {
   userName: string;
   areaName: string;
@@ -251,6 +262,7 @@ export function reservationApprovedEmail({
   endTime: string;
   adminNotes?: string;
   hasQr?: boolean;
+  detailId?: string;
 }) {
   const safeUserName = escapeHtml(userName);
   const safeAreaName = escapeHtml(areaName);
@@ -311,8 +323,8 @@ export function reservationApprovedEmail({
         }
         
         <div style="text-align: center; margin-top: 30px;">
-          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/reservations" style="background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
-            Ver reserva
+          <a href="${detailUrl(process.env.NEXT_PUBLIC_SITE_URL, detailId)}" style="background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+            Ver mis reservas
           </a>
         </div>
       </div>
