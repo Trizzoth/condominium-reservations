@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { logAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -153,6 +154,13 @@ export async function adminCancelReservation(formData: FormData) {
     })
     .eq("id", validated.data.reservationId);
   if (error) return { error: error.message };
+
+  await logAudit({
+    actorId: auth.adminId,
+    action: "reservation.admin_cancelled",
+    entityId: validated.data.reservationId,
+    detail: validated.data.motivo || undefined,
+  });
 
   revalidatePath("/admin/reservations");
   revalidatePath("/admin");

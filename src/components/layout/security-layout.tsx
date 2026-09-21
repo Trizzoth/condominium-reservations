@@ -12,11 +12,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User as UserIcon, LayoutDashboard, Shield } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Shield, SprayCan } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileNav } from "./mobile-nav";
 import { useRealtimeRefresh } from "@/hooks/use-realtime-refresh";
+import NotificationBell from "@/components/notifications/notification-bell";
 
 export function SecurityLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -71,7 +72,10 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
 
   // Solo rutas que existen: el panel de hoy es el check-in.
   // (Historial/Check-in separados van en Fase 3.)
-  const navItems = [{ href: "/security", label: "Hoy", icon: LayoutDashboard }];
+  const navItems = [
+    { href: "/security", label: "Hoy", icon: LayoutDashboard },
+    { href: "/security/cleaning", label: "Limpieza", icon: SprayCan },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -110,6 +114,7 @@ export function SecurityLayout({ children }: { children: React.ReactNode }) {
               </nav>
             </div>
             <div className="flex items-center gap-4">
+              {user && <NotificationBell />}
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

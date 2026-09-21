@@ -19,6 +19,10 @@ import {
   Building2,
   CalendarDays,
   Users,
+  TriangleAlert,
+  Settings,
+  ScrollText,
+  SprayCan,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -81,7 +85,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: "/admin/areas", label: "Áreas", icon: Building2 },
     { href: "/admin/schedules", label: "Horarios", icon: CalendarDays },
     { href: "/admin/reservations", label: "Reservas", icon: CalendarDays },
+    { href: "/admin/incidents", label: "Incidencias", icon: TriangleAlert },
     { href: "/admin/users", label: "Usuarios", icon: Users },
+    { href: "/admin/cleaning", label: "Limpieza", icon: SprayCan },
+    { href: "/admin/settings", label: "Ajustes", icon: Settings },
+    { href: "/admin/audit", label: "Auditoría", icon: ScrollText },
   ];
 
   return (

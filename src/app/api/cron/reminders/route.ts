@@ -1,5 +1,6 @@
 import { createAdminClient, getUserEmailsByIds } from "@/lib/supabase/admin";
 import { sendEmail, reservationReminderEmail } from "@/lib/emails";
+import { logAudit } from "@/lib/audit";
 import { format, parseISO, addDays, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { NextResponse } from "next/server";
@@ -94,6 +95,11 @@ export async function GET(request: Request) {
 
   if (noShowError) {
     console.error("Cron no-show error:", noShowError);
+  } else if (marked && marked.length > 0) {
+    // actor null = sistema (cron automático).
+    for (const m of marked) {
+      await logAudit({ actorId: null, action: "reservation.no_show", entityId: m.id });
+    }
   }
 
   return NextResponse.json({

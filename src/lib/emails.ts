@@ -375,6 +375,54 @@ export function reservationRejectedEmail({
   `;
 }
 
+export function reservationRecurringEmail({
+  userName,
+  areaName,
+  dates,
+  skipped,
+}: {
+  userName: string;
+  areaName: string;
+  dates: string[];
+  skipped: string[];
+}) {
+  const safeUserName = escapeHtml(userName);
+  const safeAreaName = escapeHtml(areaName);
+  const dateItems = dates.map((d) => `<li>${escapeHtml(d)}</li>`).join("");
+  const skippedBlock =
+    skipped.length > 0
+      ? `<p style="color: #92400e; font-size: 14px;"><strong>No se pudieron crear:</strong></p><ul style="color: #92400e; font-size: 14px;">${skipped.map((d) => `<li>${escapeHtml(d)}</li>`).join("")}</ul>`
+      : "";
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 24px;">🔁 Reservas recurrentes recibidas</h1>
+      </div>
+      <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+        <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
+        <p style="color: #4b5563;">Tu serie de reservas en <strong>${safeAreaName}</strong> fue recibida y está pendiente de aprobación:</p>
+        <ul style="color: #1f2937;">${dateItems}</ul>
+        ${skippedBlock}
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/reservations" style="background: #3b82f6; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+            Ver mis reservas
+          </a>
+        </div>
+      </div>
+      <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
+        © 2024 Reservas Condominio. Todos los derechos reservados.
+      </p>
+    </body>
+    </html>
+  `;
+}
+
 export function reservationReminderEmail({
   userName,
   areaName,

@@ -19,7 +19,18 @@ import {
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
+import QrScanner from "@/components/security/qr-scanner";
+import PullToRefresh from "@/components/ui/pull-to-refresh";
+import { logAudit } from "@/lib/audit";
 
+// wa.me gratis ($0, sin API): normaliza a E.164 sin "+".
+// CR por defecto: números de 8 dígitos se prefijan con 506.
+function toWaNumber(phone: string): string | null {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 8) return `506${digits}`;
+  if (digits.length >= 11 && digits.length <= 15) return digits;
+  return null;
+}
 // Solo roles operativos pueden registrar movimientos de acceso.
 async function requireSecurityRole() {
   const supabase = await createClient();
@@ -33,53 +44,56 @@ async function requireSecurityRole() {
     .eq("id", user.id)
     .single();
   if (profile?.role !== "security" && profile?.role !== "admin") return null;
-  return supabase;
+  return { supabase, userId: user.id };
 }
 
 // Server Actions (se invocan vía <form action>, no con onClick:
 // este archivo es un Server Component y onClick no funciona en servidor).
 async function checkIn(formData: FormData) {
   "use server";
-  const supabase = await requireSecurityRole();
+  const auth = await requireSecurityRole();
   const reservationId = formData.get("reservationId");
-  if (!supabase || typeof reservationId !== "string") return;
-  await supabase
+  if (!auth || typeof reservationId !== "string") return;
+  await auth.supabase
     .from("reservations")
     .update({
       checked_in_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", reservationId);
+  await logAudit({ actorId: auth.userId, action: "reservation.checked_in", entityId: reservationId });
   revalidatePath("/security");
 }
 
 async function checkOut(formData: FormData) {
   "use server";
-  const supabase = await requireSecurityRole();
+  const auth = await requireSecurityRole();
   const reservationId = formData.get("reservationId");
-  if (!supabase || typeof reservationId !== "string") return;
-  await supabase
+  if (!auth || typeof reservationId !== "string") return;
+  await auth.supabase
     .from("reservations")
     .update({
       checked_out_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", reservationId);
+  await logAudit({ actorId: auth.userId, action: "reservation.checked_out", entityId: reservationId });
   revalidatePath("/security");
 }
 
 async function markNoShow(formData: FormData) {
   "use server";
-  const supabase = await requireSecurityRole();
+  const auth = await requireSecurityRole();
   const reservationId = formData.get("reservationId");
-  if (!supabase || typeof reservationId !== "string") return;
-  await supabase
+  if (!auth || typeof reservationId !== "string") return;
+  await auth.supabase
     .from("reservations")
     .update({
       status: "no_show",
       updated_at: new Date().toISOString(),
     })
     .eq("id", reservationId);
+  await logAudit({ actorId: auth.userId, action: "reservation.no_show", entityId: reservationId });
   revalidatePath("/security");
 }
 
@@ -231,6 +245,7 @@ export default async function SecurityDashboardPage({
           <h2 className="text-xl font-semibold">
             {query ? `Resultado para "${query}"` : "Reservas de hoy"}
           </h2>
+          <QrScanner initialCode={code} />
           <form method="GET" className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -263,6 +278,7 @@ export default async function SecurityDashboardPage({
               </CardContent>
             </Card>
           ) : (
+            <PullToRefresh>
             <div className="space-y-3">
               {displayed.map((r) => {
               const statusKey = r.security_status as keyof typeof statusConfig;
@@ -347,13 +363,25 @@ export default async function SecurityDashboardPage({
                     </div>
                     {(r.profiles?.phone || r.resident_email) && (
                       <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                           {r.profiles?.phone && (
                             <span className="flex items-center gap-1">
                               <Phone className="h-3 w-3" /> {r.profiles.phone}
                             </span>
                           )}
                           {r.resident_email && <span>{r.resident_email}</span>}
+                          {r.profiles?.phone && toWaNumber(r.profiles.phone) && (
+                            <a
+                              href={`https://wa.me/${toWaNumber(r.profiles.phone!)!}?text=${encodeURIComponent(
+                                `Hola ${r.profiles?.full_name || "vecino"}, soy seguridad del condominio. Tu reserva de ${r.common_areas?.name || "área común"} hoy ${format(parseISO(r.start_time), "HH:mm", { locale: es })}-${format(parseISO(r.end_time), "HH:mm", { locale: es })} (#${r.id.slice(0, 8)}) sigue pendiente. ¿Vienes en camino?`,
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2 py-1 font-medium text-white hover:bg-green-700"
+                            >
+                              WhatsApp
+                            </a>
+                          )}
                         </div>
                       </div>
                     )}
@@ -362,6 +390,7 @@ export default async function SecurityDashboardPage({
               );
             })}
           </div>
+          </PullToRefresh>
         )}
       </div>
     </div>

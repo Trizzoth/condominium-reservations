@@ -45,6 +45,44 @@ export default async function AdminPage() {
   const { data: areas } = await supabase.from("common_areas").select("*").eq("is_active", true);
   const { data: profiles } = await supabase.from("profiles").select("*").eq("role", "resident");
 
+  // Stats con datos que ya hay (sin nuevas tablas ni dependencias).
+  const activeReservations = (reservations || []).filter(
+    (r) => r.status === "approved" || r.status === "pending",
+  );
+  const byArea = new Map<string, number>();
+  for (const r of activeReservations) {
+    const name = r.common_areas?.name || "Sin área";
+    byArea.set(name, (byArea.get(name) || 0) + 1);
+  }
+  const topAreas = [...byArea.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const maxArea = topAreas[0]?.[1] || 1;
+
+  const byHour = new Map<string, number>();
+  for (const r of activeReservations) {
+    try {
+      const h = format(parseISO(r.start_time), "HH:00");
+      byHour.set(h, (byHour.get(h) || 0) + 1);
+    } catch {
+      // fecha inválida: se ignora en stats
+    }
+  }
+  const topHours = [...byHour.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const maxHour = topHours[0]?.[1] || 1;
+
+  const byUser = new Map<string, { name: string; apartment: string; count: number }>();
+  for (const r of reservationsWithEmail) {
+    if (r.status === "cancelled" || r.status === "rejected") continue;
+    const prev = byUser.get(r.user_id) || {
+      name: r.profiles?.full_name || r.resident_email || "Sin nombre",
+      apartment: r.profiles?.apartment || "",
+      count: 0,
+    };
+    prev.count += 1;
+    byUser.set(r.user_id, prev);
+  }
+  const topResidents = [...byUser.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+  const maxResident = topResidents[0]?.count || 1;
+
   const statusConfig = {
     pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
     approved: { label: "Aprobada", color: "bg-green-100 text-green-800", icon: CheckCircle },
@@ -98,6 +136,93 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{profiles?.length || 0}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Ocupación por área</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topAreas.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin datos aún</p>
+            ) : (
+              <div className="space-y-2">
+                {topAreas.map(([name, count]) => (
+                  <div key={name} className="text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate font-medium">{name}</span>
+                      <span className="text-muted-foreground">{count}</span>
+                    </div>
+                    <div className="mt-1 h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-primary"
+                        style={{ width: `${Math.round((count / maxArea) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Horas pico</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topHours.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin datos aún</p>
+            ) : (
+              <div className="space-y-2">
+                {topHours.map(([hour, count]) => (
+                  <div key={hour} className="text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="font-medium tabular-nums">{hour}</span>
+                      <span className="text-muted-foreground">{count}</span>
+                    </div>
+                    <div className="mt-1 h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-green-600"
+                        style={{ width: `${Math.round((count / maxHour) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top residentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topResidents.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin datos aún</p>
+            ) : (
+              <div className="space-y-2">
+                {topResidents.map((u) => (
+                  <div key={`${u.name}-${u.apartment}`} className="text-sm">
+                    <div className="flex justify-between gap-2">
+                      <span className="truncate font-medium">
+                        {u.name}
+                        {u.apartment ? ` · ${u.apartment}` : ""}
+                      </span>
+                      <span className="text-muted-foreground">{u.count}</span>
+                    </div>
+                    <div className="mt-1 h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-yellow-500"
+                        style={{ width: `${Math.round((u.count / maxResident) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
