@@ -9,6 +9,12 @@ import SubmitButton from "@/components/ui/submit-button";
 import { Calendar, Users, Building2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Administración | Reservas Condominio",
+  description: "Aprobar reservas, ver ocupación y gestionar el condominio.",
+};
 
 // Wrappers FormData→string para usar las Server Actions directo en <form>
 // (RULES: mutaciones con Server Actions, sin API Routes).

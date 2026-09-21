@@ -55,6 +55,13 @@ export function getEmailAddress(): string {
 }
 
 /**
+ * Año dinámico para el copyright (estaba hardcodeado 2024).
+ */
+export function siteYear(): number {
+  return new Date().getFullYear();
+}
+
+/**
  * Versión texto plano del HTML (los filtros spam penalizan el solo-HTML).
  * Conversión simple sin dependencias: bloques a saltos de línea + entidades.
  */
@@ -240,7 +247,7 @@ export function reservationCreatedEmail({
       </div>
       <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
         ID de reserva: ${reservationId}<br>
-        © 2024 Reservas Condominio. Todos los derechos reservados.
+        © ${siteYear()} Reservas Condominio. Todos los derechos reservados.
       </p>
     </body>
     </html>
@@ -329,7 +336,7 @@ export function reservationApprovedEmail({
         </div>
       </div>
       <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
-        © 2024 Reservas Condominio. Todos los derechos reservados.
+        © ${siteYear()} Reservas Condominio. Todos los derechos reservados.
       </p>
     </body>
     </html>
@@ -404,7 +411,7 @@ export function reservationRejectedEmail({
         </div>
       </div>
       <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
-        © 2024 Reservas Condominio. Todos los derechos reservados.
+        © ${siteYear()} Reservas Condominio. Todos los derechos reservados.
       </p>
     </body>
     </html>
@@ -452,7 +459,7 @@ export function reservationRecurringEmail({
         </div>
       </div>
       <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
-        © 2024 Reservas Condominio. Todos los derechos reservados.
+        © ${siteYear()} Reservas Condominio. Todos los derechos reservados.
       </p>
     </body>
     </html>
@@ -516,7 +523,7 @@ export function reservationReminderEmail({
         </div>
       </div>
       <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">
-        © 2024 Reservas Condominio. Todos los derechos reservados.
+        © ${siteYear()} Reservas Condominio. Todos los derechos reservados.
       </p>
     </body>
     </html>

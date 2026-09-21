@@ -7,7 +7,13 @@ import Link from "next/link";
 import { Calendar, Users, Building2, Plus } from "lucide-react";
 import { startOfWeek, endOfWeek } from "date-fns";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
+import type { Metadata } from "next";
 import { BUSINESS_TIMEZONE } from "@/lib/reservation-rules";
+
+export const metadata: Metadata = {
+  title: "Inicio | Reservas Condominio",
+  description: "Tus próximas reservas y disponibilidad.",
+};
 
 export default async function DashboardPage() {
   const supabase = await createClient();

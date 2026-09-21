@@ -239,6 +239,17 @@ export default function RegisterPage() {
               Inicia sesión
             </Link>
           </p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            Al registrarte aceptas los{" "}
+            <Link href="/terminos" className="underline hover:text-foreground">
+              Términos
+            </Link>{" "}
+            y la{" "}
+            <Link href="/privacidad" className="underline hover:text-foreground">
+              Privacidad
+            </Link>
+            .
+          </p>
         </div>
 
         <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "200ms" }}>
