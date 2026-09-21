@@ -182,6 +182,7 @@ export default function ReportForm({ areas }: { areas: IncidentArea[] }) {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Cuéntanos qué viste y dónde exactamente"
           rows={3}
+          maxLength={2000}
         />
       </div>
       <div className="space-y-2">

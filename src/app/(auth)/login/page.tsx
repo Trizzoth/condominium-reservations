@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, SignInInput } from "@/lib/validations/auth";
 import { Form, FormItem, FormLabel, FormControl, FormMessage } from "@/components/forms/form";
 import { Building2, Mail, Lock, Sparkles } from "lucide-react";
+import Turnstile from "@/components/auth/turnstile";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -20,6 +21,7 @@ function LoginForm() {
   const callbackUrl = searchParams.get("callbackUrl") ?? searchParams.get("redirect");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const form = useForm<SignInInput>({
     resolver: zodResolver(signInSchema),
@@ -32,6 +34,7 @@ function LoginForm() {
     const formData = new FormData();
     formData.set("email", data.email);
     formData.set("password", data.password);
+    if (turnstileToken) formData.set("turnstileToken", turnstileToken);
     // La Server Action redirige según rol; le pasamos el destino deseado
     // (solo se respeta si el rol puede acceder a esa ruta).
     if (callbackUrl) formData.set("callbackUrl", callbackUrl);
@@ -140,6 +143,7 @@ function LoginForm() {
               <FormMessage />
             </FormItem>
 
+            <Turnstile onToken={setTurnstileToken} />
             <Button
               type="submit"
               className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50"

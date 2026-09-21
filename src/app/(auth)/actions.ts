@@ -11,6 +11,7 @@ import {
   resetPasswordSchema,
 } from "@/lib/validations/auth";
 import { resolvePostLoginRedirect, homeForRole } from "@/lib/auth-redirect";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { redirect } from "next/navigation";
 
 export async function signIn(formData: FormData) {
@@ -21,6 +22,12 @@ export async function signIn(formData: FormData) {
 
   if (!validated.success) {
     return { error: validated.error.flatten().fieldErrors };
+  }
+
+  // Bot protection (solo si hay keys; sin ellas no bloquea).
+  const turnstileToken = formData.get("turnstileToken");
+  if (!(await verifyTurnstile(typeof turnstileToken === "string" ? turnstileToken : null))) {
+    return { error: { form: ["Verificación anti-bots falló, reintenta"] } };
   }
 
   const supabase = await createClient();
@@ -56,6 +63,12 @@ export async function signUp(formData: FormData) {
 
   if (!validated.success) {
     return { error: validated.error.flatten().fieldErrors };
+  }
+
+  // Bot protection (solo si hay keys; sin ellas no bloquea).
+  const turnstileToken = formData.get("turnstileToken");
+  if (!(await verifyTurnstile(typeof turnstileToken === "string" ? turnstileToken : null))) {
+    return { error: { form: ["Verificación anti-bots falló, reintenta"] } };
   }
 
   const supabase = await createClient();
