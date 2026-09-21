@@ -52,7 +52,7 @@ async function createTask(formData: FormData) {
   });
   if (!validated.success) return;
 
-  const { data: task, error } = await auth.supabase
+  const { data: task, error } = await createAdminClient()
     .from('cleaning_tasks')
     .insert({
       title: validated.data.title,
@@ -92,7 +92,7 @@ async function setDone(formData: FormData) {
   const id = formData.get('id');
   const done = formData.get('done') === '1';
   if (!auth || typeof id !== 'string') return;
-  await auth.supabase
+  await createAdminClient()
     .from('cleaning_tasks')
     .update({
       status: done ? 'done' : 'pending',
@@ -108,7 +108,7 @@ async function deleteTask(formData: FormData) {
   const auth = await requireAdmin();
   const id = formData.get('id');
   if (!auth || typeof id !== 'string') return;
-  await auth.supabase.from('cleaning_tasks').delete().eq('id', id);
+  await createAdminClient().from('cleaning_tasks').delete().eq('id', id);
   revalidatePath('/admin/cleaning');
 }
 

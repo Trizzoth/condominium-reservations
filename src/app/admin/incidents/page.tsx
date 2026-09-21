@@ -36,8 +36,10 @@ async function setStatus(formData: FormData) {
   const status = formData.get('status');
   if (!ok || typeof id !== 'string' || typeof status !== 'string') return;
   if (!['open', 'in_progress', 'resolved'].includes(status)) return;
-  const supabase = await createClient();
-  await supabase
+  // Escritura con service-role (ver comentario en approveReservationAction:
+  // el JWT no trae claim admin). El rol ya se verificó arriba.
+  const adminDb = createAdminClient();
+  await adminDb
     .from('incidents')
     .update({
       status: status as 'open' | 'in_progress' | 'resolved',
