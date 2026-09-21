@@ -18,6 +18,12 @@ import {
 } from "lucide-react";
 import { format, parseISO, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Seguridad | Reservas Condominio",
+  description: "Control de acceso y check-in de áreas comunes.",
+};
 import { revalidatePath } from "next/cache";
 import QrScanner from "@/components/security/qr-scanner";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
