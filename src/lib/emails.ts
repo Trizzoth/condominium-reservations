@@ -211,14 +211,14 @@ export function reservationCreatedEmail({
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">🏢 Reservas Condominio</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">Reservas Condominio</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
         <p style="color: #4b5563;">Tu solicitud de reserva ha sido <strong style="color: #3b82f6;">recibida correctamente</strong> y está pendiente de aprobación del administrador.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #3b82f6;">
-          <h3 style="margin: 0 0 15px 0; color: #1f2937;">📋 Detalles de la reserva</h3>
+          <h3 style="margin: 0 0 15px 0; color: #1f2937;">Detalles de la reserva</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
@@ -282,14 +282,14 @@ export function reservationApprovedEmail({
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">✅ Reserva Aprobada</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">Reserva Aprobada</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="color: #1f2937; margin-top: 0;">¡Hola ${safeUserName}!</h2>
         <p style="color: #4b5563;">¡Buenas noticias! Tu reserva ha sido <strong style="color: #10b981;">aprobada por el administrador</strong>.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #10b981;">
-          <h3 style="margin: 0 0 15px 0; color: #1f2937;">📋 Detalles confirmados</h3>
+          <h3 style="margin: 0 0 15px 0; color: #1f2937;">Detalles confirmados</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
@@ -302,7 +302,7 @@ export function reservationApprovedEmail({
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Estado:</td>
               <td style="padding: 8px 0;">
-                <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Aprobada ✓</span>
+                <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Aprobada</span>
               </td>
             </tr>
           </table>
@@ -367,14 +367,14 @@ export function reservationRejectedEmail({
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">❌ Reserva Rechazada</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">Reserva Rechazada</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
         <p style="color: #4b5563;">Tu solicitud de reserva ha sido <strong style="color: #ef4444;">rechazada por el administrador</strong>.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #ef4444;">
-          <h3 style="margin: 0 0 15px 0; color: #1f2937;">📋 Detalles</h3>
+          <h3 style="margin: 0 0 15px 0; color: #1f2937;">Detalles</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
@@ -445,7 +445,7 @@ export function reservationRecurringEmail({
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">🔁 Reservas recurrentes recibidas</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">Reservas recurrentes recibidas</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
@@ -488,14 +488,14 @@ export function reservationReminderEmail({
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-        <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Recordatorio de Reserva</h1>
+        <h1 style="color: white; margin: 0; font-size: 24px;">Recordatorio de Reserva</h1>
       </div>
       <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
         <h2 style="color: #1f2937; margin-top: 0;">Hola ${safeUserName},</h2>
         <p style="color: #4b5563;">Te recordamos que tienes una reserva <strong style="color: #f59e0b;">mañana</strong>.</p>
         
         <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-          <h3 style="margin: 0 0 15px 0; color: #1f2937;">📋 Tu reserva</h3>
+          <h3 style="margin: 0 0 15px 0; color: #1f2937;">Tu reserva</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Área:</td>
@@ -508,7 +508,7 @@ export function reservationReminderEmail({
             <tr>
               <td style="padding: 8px 0; color: #6b7280; font-weight: 500;">Estado:</td>
               <td style="padding: 8px 0;">
-                <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Confirmada ✓</span>
+                <span style="background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">Confirmada</span>
               </td>
             </tr>
           </table>
