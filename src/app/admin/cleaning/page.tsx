@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { notifyUser } from '@/lib/notifications';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import SubmitButton from '@/components/ui/submit-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -178,9 +178,9 @@ export default async function AdminCleaningPage() {
               />
             </div>
             <div className="md:col-span-2">
-              <Button type="submit">
+              <SubmitButton pendingText="Creando y avisando...">
                 <SprayCan className="mr-2 h-4 w-4" /> Crear y avisar al conserje
-              </Button>
+              </SubmitButton>
             </div>
           </form>
         </CardContent>
@@ -214,7 +214,7 @@ export default async function AdminCleaningPage() {
                   <form action={setDone}>
                     <input type="hidden" name="id" value={t.id} />
                     <input type="hidden" name="done" value={t.status === 'done' ? '0' : '1'} />
-                    <Button type="submit" size="sm" variant="outline">
+                    <SubmitButton size="sm" variant="outline" pendingText="...">
                       {t.status === 'done' ? (
                         <>
                           <RotateCcw className="mr-1 h-4 w-4" /> Reabrir
@@ -224,13 +224,18 @@ export default async function AdminCleaningPage() {
                           <CheckCircle className="mr-1 h-4 w-4" /> Hecha
                         </>
                       )}
-                    </Button>
+                    </SubmitButton>
                   </form>
                   <form action={deleteTask}>
                     <input type="hidden" name="id" value={t.id} />
-                    <Button type="submit" size="sm" variant="ghost" className="text-red-600">
+                    <SubmitButton
+                      size="sm"
+                      variant="ghost"
+                      className="text-red-600"
+                      pendingText="..."
+                    >
                       <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </div>
               </div>

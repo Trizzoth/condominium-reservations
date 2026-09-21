@@ -5,6 +5,19 @@ interface EmailParams {
   to: string;
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
+}
+
+/**
+ * Adjunto con Content-ID para imágenes inline (cid:xxx).
+ * Necesario porque Gmail NO renderiza <img src="data:..."> (sale roto);
+ * como adjunto CID sí se muestra.
+ */
+export interface EmailAttachment {
+  filename: string;
+  contentBase64: string;
+  contentType: string;
+  cid: string;
 }
 
 export type EmailProvider = "smtp" | "resend" | "none";
@@ -78,7 +91,7 @@ export function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
-export async function sendEmail({ to, subject, html }: EmailParams) {
+export async function sendEmail({ to, subject, html, attachments }: EmailParams) {
   const provider = getEmailProvider();
 
   if (provider === "none") {
@@ -102,6 +115,12 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
         subject,
         text: htmlToText(html),
         html,
+        attachments: (attachments || []).map((a) => ({
+          filename: a.filename,
+          content: Buffer.from(a.contentBase64, "base64"),
+          contentType: a.contentType,
+          cid: a.cid,
+        })),
         list: {
           unsubscribe: {
             url: `mailto:${getEmailAddress()}?subject=baja`,
@@ -129,6 +148,11 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
       subject,
       text: htmlToText(html),
       html,
+      attachments: (attachments || []).map((a) => ({
+        filename: a.filename,
+        content: a.contentBase64,
+        contentType: a.contentType,
+      })),
       headers: {
         "List-Unsubscribe": `<mailto:${getEmailAddress()}?subject=baja>`,
       },
@@ -219,14 +243,14 @@ export function reservationApprovedEmail({
   startTime,
   endTime,
   adminNotes,
-  qrCodeDataUrl,
+  hasQr,
 }: {
   userName: string;
   areaName: string;
   startTime: string;
   endTime: string;
   adminNotes?: string;
-  qrCodeDataUrl?: string;
+  hasQr?: boolean;
 }) {
   const safeUserName = escapeHtml(userName);
   const safeAreaName = escapeHtml(areaName);
@@ -276,10 +300,10 @@ export function reservationApprovedEmail({
 
         <p style="color: #6b7280; font-size: 14px;">Presenta este correo (o el código QR en la app) al llegar al área común para el check-in.</p>
         ${
-          qrCodeDataUrl
+          hasQr
             ? `
           <div style="text-align: center; margin: 20px 0;">
-            <img src="${qrCodeDataUrl}" alt="QR de check-in" width="160" height="160" style="border-radius: 8px; border: 1px solid #e5e7eb;" />
+            <img src="cid:qr-checkin" alt="QR de check-in" width="160" height="160" style="border-radius: 8px; border: 1px solid #e5e7eb;" />
             <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">Muestra este código en seguridad</p>
           </div>
         `

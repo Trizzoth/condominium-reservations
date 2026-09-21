@@ -47,6 +47,17 @@ describe("templates", () => {
     expect(html).not.toContain("<img");
     expect(html).toContain("&lt;img");
   });
+  it("approved: con hasQr usa cid (Gmail bloquea data:URLs)", () => {
+    const html = reservationApprovedEmail({
+      userName: "Ana",
+      areaName: "Salón",
+      startTime: "hoy",
+      endTime: "10:00",
+      hasQr: true,
+    });
+    expect(html).toContain('src="cid:qr-checkin"');
+    expect(html).not.toContain("data:image");
+  });
   it("created: userName/areaName llegan escapados", () => {
     const html = reservationCreatedEmail({
       userName: "<b>Ana</b>",

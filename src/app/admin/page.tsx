@@ -4,8 +4,8 @@ import {
   rejectReservationAction,
 } from "@/app/(dashboard)/dashboard/reservations/actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import SubmitButton from "@/components/ui/submit-button";
 import { Calendar, Users, Building2, Clock, CheckCircle, XCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -281,15 +281,15 @@ export default async function AdminPage() {
                           <div className="flex gap-2">
                             <form action={approve}>
                               <input type="hidden" name="reservationId" value={r.id} />
-                              <Button type="submit" size="sm" variant="default">
+                              <SubmitButton size="sm" pendingText="Aprobando...">
                                 <CheckCircle className="h-4 w-4 mr-1" /> Aprobar
-                              </Button>
+                              </SubmitButton>
                             </form>
                             <form action={reject}>
                               <input type="hidden" name="reservationId" value={r.id} />
-                              <Button type="submit" size="sm" variant="destructive">
+                              <SubmitButton size="sm" variant="destructive" pendingText="Rechazando...">
                                 <XCircle className="h-4 w-4 mr-1" /> Rechazar
-                              </Button>
+                              </SubmitButton>
                             </form>
                           </div>
                         )}

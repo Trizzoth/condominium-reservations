@@ -214,6 +214,35 @@ function LoginForm() {
               Regístrate
             </Link>
           </p>
+
+          {process.env.NEXT_PUBLIC_DEMO_ACCOUNTS === "true" && (
+            <div className="mt-6 rounded-xl border border-dashed border-border p-4">
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                Cuentas de prueba (solo demo: rellena, luego pulsa Iniciar sesión)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "Admin", email: "admin@test.com", password: "Admin123" },
+                  { label: "Seguridad", email: "security@test.com", password: "Security123" },
+                  { label: "Residente", email: "resident@test.com", password: "Resident123" },
+                ].map((a) => (
+                  <Button
+                    key={a.email}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      form.setValue("email", a.email);
+                      form.setValue("password", a.password);
+                      setMessage(null);
+                    }}
+                  >
+                    {a.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "200ms" }}>

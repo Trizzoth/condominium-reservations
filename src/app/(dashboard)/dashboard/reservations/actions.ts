@@ -406,15 +406,20 @@ export async function approveReservationAction(reservationId: string) {
   // Escritura con service-role: las policies Admins * exigen claim JWT
   // `role=admin` que Supabase no incluye por defecto (el update vía
   // user-client no toca filas). El rol ya se verificó arriba.
+  // Guard .eq pending: idempotencia (doble-click no duplica emails).
   const { data: reservation, error } = await createAdminClient()
     .from("reservations")
     .update({ status: "approved", updated_at: new Date().toISOString() })
     .eq("id", reservationId)
+    .eq("status", "pending")
     .select("*, common_areas(name), profiles(full_name)")
-    .single();
+    .maybeSingle();
 
   if (error) {
     return { error: error.message };
+  }
+  if (!reservation) {
+    return { error: { form: ["Esa reserva ya fue procesada"] } };
   }
 
   // Send approval email (el email vive en auth.users, no en profiles)
@@ -428,10 +433,12 @@ export async function approveReservationAction(reservationId: string) {
     );
     const endFormatted = format(parseISO(reservation.end_time), "HH:mm", { locale: es });
 
-    // QR con el id para check-in en seguridad (si falla, el email va sin QR).
-    let qrCodeDataUrl: string | undefined;
+    // QR con el id para check-in en seguridad, como ADJUNTO CID
+    // (Gmail no renderiza data:URLs, salían rotos). Si falla, el email va sin QR.
+    let qrPngBase64: string | undefined;
     try {
-      qrCodeDataUrl = await QRCode.toDataURL(reservation.id, { width: 160, margin: 1 });
+      const buf: Buffer = await QRCode.toBuffer(reservation.id, { width: 320, margin: 1 });
+      qrPngBase64 = buf.toString("base64");
     } catch (err) {
       console.error("QR generation failed:", err);
     }
@@ -445,8 +452,18 @@ export async function approveReservationAction(reservationId: string) {
         startTime: startFormatted,
         endTime: endFormatted,
         adminNotes: reservation.admin_notes || undefined,
-        qrCodeDataUrl,
+        hasQr: !!qrPngBase64,
       }),
+      attachments: qrPngBase64
+        ? [
+            {
+              filename: "qr-checkin.png",
+              contentBase64: qrPngBase64,
+              contentType: "image/png",
+              cid: "qr-checkin",
+            },
+          ]
+        : undefined,
     });
   }
 
@@ -495,10 +512,16 @@ export async function rejectReservationAction(reservationId: string, adminNotes?
       updated_at: new Date().toISOString(),
     })
     .eq("id", reservationId)
+    .eq("status", "pending")
     .select("*, common_areas(name), profiles(full_name)")
-    .single();
+    .maybeSingle();
 
-  if (error) return { error: error.message };
+  if (error) {
+    return { error: error.message };
+  }
+  if (!reservation) {
+    return { error: "Esa reserva ya fue procesada" };
+  }
 
   // Send rejection email (el email vive en auth.users, no en profiles)
   const emails = await getUserEmailsByIds([reservation.user_id]);

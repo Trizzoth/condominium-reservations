@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import SubmitButton from '@/components/ui/submit-button';
 import { Badge } from '@/components/ui/badge';
 import { TriangleAlert, Wrench, CheckCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -38,14 +38,14 @@ async function setStatus(formData: FormData) {
   if (!['open', 'in_progress', 'resolved'].includes(status)) return;
   // Escritura con service-role (ver comentario en approveReservationAction:
   // el JWT no trae claim admin). El rol ya se verificó arriba.
+  // Guard por estado: idempotencia (Atender solo abierta, Resolver si no resuelta).
   const adminDb = createAdminClient();
-  await adminDb
-    .from('incidents')
-    .update({
-      status: status as 'open' | 'in_progress' | 'resolved',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id);
+  let q = adminDb.from('incidents').update({
+    status: status as 'open' | 'in_progress' | 'resolved',
+    updated_at: new Date().toISOString(),
+  });
+  q = status === 'in_progress' ? q.eq('status', 'open') : q.neq('status', 'resolved');
+  await q.eq('id', id);
   revalidatePath('/admin/incidents');
 }
 
@@ -130,18 +130,18 @@ export default async function AdminIncidentsPage() {
                         <form action={setStatus}>
                           <input type="hidden" name="id" value={i.id} />
                           <input type="hidden" name="status" value="in_progress" />
-                          <Button type="submit" size="sm" variant="outline">
+                          <SubmitButton size="sm" variant="outline" pendingText="...">
                             <Wrench className="mr-1 h-4 w-4" /> Atender
-                          </Button>
+                          </SubmitButton>
                         </form>
                       )}
                       {i.status !== 'resolved' && (
                         <form action={setStatus}>
                           <input type="hidden" name="id" value={i.id} />
                           <input type="hidden" name="status" value="resolved" />
-                          <Button type="submit" size="sm">
+                          <SubmitButton size="sm" pendingText="...">
                             <CheckCircle className="mr-1 h-4 w-4" /> Resolver
-                          </Button>
+                          </SubmitButton>
                         </form>
                       )}
                     </div>
