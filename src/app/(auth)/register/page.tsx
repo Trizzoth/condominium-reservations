@@ -19,11 +19,13 @@ import {
 } from "@/components/forms/form";
 import { Building2, Mail, Lock, User, Home, Sparkles } from "lucide-react";
 import PhoneInput from "@/components/forms/phone-input";
+import Turnstile from "@/components/auth/turnstile";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const form = useForm<SignUpInput>({
     resolver: zodResolver(signUpSchema),
@@ -47,6 +49,7 @@ export default function RegisterPage() {
     formData.set("confirmPassword", data.confirmPassword);
     formData.set("apartment", data.apartment || "");
     formData.set("phone", data.phone || "");
+    if (turnstileToken) formData.set("turnstileToken", turnstileToken);
     const result = await signUp(formData);
     setIsLoading(false);
     if (result?.error) {
@@ -198,6 +201,7 @@ export default function RegisterPage() {
               </FormItem>
             </div>
 
+            <Turnstile onToken={setTurnstileToken} />
             <Button
               type="submit"
               className="w-full py-3 text-base font-semibold rounded-xl shadow-soft hover:shadow-lg transition-all duration-200 disabled:opacity-50"
